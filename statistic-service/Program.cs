@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json.Serialization; // 🌟 Bổ sung thư viện này ở đầu file
+using System.Text.Json.Serialization;
 using StatisticService.Common.Configs;
 using StatisticService.Common.Exceptions;
 using StatisticService.Security.Extensions;
 using StatisticService.Security.Middlewares;
+using StatisticService.Modules.Admin.Services;
+using StatisticService.Grpc.Payment;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,14 +30,29 @@ builder.Services.AddCustomJwtAuthentication(builder.Configuration);
 
 // 3. Setup Services
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<AdminStatisticsService>();
+
+
+builder.Services.AddGrpcClient<InternalPaymentGrpcService.InternalPaymentGrpcServiceClient>((sp, options) =>
+{
+    var env = sp.GetRequiredService<IOptions<EnvConfig>>().Value;
+    options.Address = new Uri(env.GRPC_PAYMENT_URL);
+});
+
 
 var app = builder.Build();
 
+app.UsePathBase("/api/v1");
+
 app.UseExceptionHandler();
+
 app.UseRouting();
+
 app.UseMiddleware<CustomJwtMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();
