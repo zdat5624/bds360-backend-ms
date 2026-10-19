@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using StatisticService.Common.Configs;
 using StatisticService.Common.Configs.Extensions;
 using StatisticService.Common.Exceptions;
+using StatisticService.Grpc.Identity;
 using StatisticService.Grpc.Identity.Statistic;
 using StatisticService.Grpc.Listing.Statistic;
 using StatisticService.Grpc.Payment.Statistic;
@@ -60,6 +61,16 @@ builder
 // Đăng ký Client cho Identity
 builder
     .Services.AddGrpcClient<InternalIdentityStatisticService.InternalIdentityStatisticServiceClient>(
+        (sp, options) =>
+        {
+            var env = sp.GetRequiredService<IOptions<EnvConfig>>().Value;
+            options.Address = new Uri(env.GRPC_IDENTITY_URL);
+        }
+    )
+    .WithOptimizedSocketsHandler();
+
+builder
+    .Services.AddGrpcClient<InternalIdentityService.InternalIdentityServiceClient>(
         (sp, options) =>
         {
             var env = sp.GetRequiredService<IOptions<EnvConfig>>().Value;

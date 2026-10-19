@@ -151,4 +151,5 @@ public class UserService {
         user.setPassword(encodedNewPassword);
         userRepository.save(user);
     }
+
 }

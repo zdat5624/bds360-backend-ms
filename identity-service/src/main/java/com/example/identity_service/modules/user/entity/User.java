@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.example.identity_service.common.constant.Role;
 import com.example.identity_service.modules.auth.entity.PasswordResetToken;
+import com.example.identity_service.modules.user.constant.AccountStatus;
 import com.example.identity_service.modules.user.constant.Gender;
 import com.example.identity_service.security.service.SecurityService;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -44,7 +45,7 @@ public class User {
 
     @NotBlank(message = "Password không được để trống")
     @JsonIgnore
-    private String password; // Trong DB có thể map với cột password_hash
+    private String password;
 
     @Enumerated(EnumType.STRING)
     private Role role;
@@ -52,8 +53,16 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Long balance = 0L; // Giữ lại balance mặc định là 0
+    private AccountStatus status = AccountStatus.ACTIVE;
+
+    // 🌟 4. THÊM TRƯỜNG LƯU VẾT THỜI GIAN XÓA
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
+    @Column(nullable = false)
+    private Long balance = 0L;
 
     private String avatar;
 
@@ -70,10 +79,6 @@ public class User {
     private String createdBy;
     private String updatedBy;
 
-    // ĐÃ XÓA: posts, transactions, notifications (Chuyển sang Soft-link ở các
-    // service khác)
-
-    // GIỮ LẠI: Các quan hệ nội bộ của Identity Service
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
     @JsonIgnore
     private List<PasswordResetToken> passwordResetTokens;
@@ -93,8 +98,7 @@ public class User {
         }
 
         if (this.avatar == null || this.avatar.trim().isEmpty()) {
-            this.avatar = "http://localhost:8080/uploads/avatar-default.webp"; // Có thể cấu hình lại URL qua
-                                                                               // AppProperties
+            this.avatar = "http://localhost:8080/uploads/avatar-default.webp";
         }
 
         if (this.createdAt == null) {
@@ -104,11 +108,15 @@ public class User {
         if (this.balance == null) {
             this.balance = 0L;
         }
+
+        // Đảm bảo user mới tạo luôn có trạng thái ACTIVE
+        if (this.status == null) {
+            this.status = AccountStatus.ACTIVE;
+        }
     }
 
     @PreUpdate
     public void handleBeforeUpdate() {
-        // this.updatedBy = SecurityService.getCurrentUserLogin().orElse(this.email);
         this.updatedAt = Instant.now();
     }
 }

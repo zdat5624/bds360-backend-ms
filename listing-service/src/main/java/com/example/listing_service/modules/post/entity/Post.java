@@ -86,6 +86,9 @@ public class Post {
     @Column(name = "user_id", nullable = false)
     private Long userId; // Liên kết mềm sang bảng users của Identity Service
 
+    @Column(name = "author_email")
+    private String authorEmail;
+
     @Column(name = "author_name")
     private String authorName;
 

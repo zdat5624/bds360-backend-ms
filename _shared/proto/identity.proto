@@ -1,0 +1,31 @@
+syntax = "proto3";
+package identity;
+option java_multiple_files = true;
+option csharp_namespace = "StatisticService.Grpc.Identity";
+
+message GetUsersInfoRequest {
+    repeated int64 userIds = 1;
+}
+
+message UserInfo {
+    int64 userId = 1;
+    string name = 2;
+    string email = 3;
+    string avatar = 4;
+    string phone = 5;
+    string address = 6;
+    string role = 7;
+    string gender = 8;
+    int64 balance = 9;
+    bool isVerified = 10;
+    int64 createdAtMillis = 11;
+}
+
+message GetUsersInfoReply {
+    map<int64, UserInfo> users = 1;
+}
+
+service InternalIdentityService {
+
+    rpc GetUsersInfo (GetUsersInfoRequest) returns (GetUsersInfoReply);
+}

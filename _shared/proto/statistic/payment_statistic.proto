@@ -74,6 +74,7 @@ message TransactionLogItem {
     string status = 6;
     string description = 7;
     int64 createdAtMillis = 8;
+    int64 userId = 9;
 }
 
 message UserFinancialRequest {

@@ -16,6 +16,11 @@ public class UserSpecification {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            // 🌟 1. Lọc theo mảng Trạng thái (IN)
+            if (filter.getStatuses() != null && !filter.getStatuses().isEmpty()) {
+                predicates.add(root.get("status").in(filter.getStatuses()));
+            }
+
             // 1. Lọc theo Tên (Tìm kiếm tương đối - LIKE)
             if (filter.getName() != null && !filter.getName().trim().isEmpty()) {
                 predicates.add(cb.like(cb.lower(root.get("name")), "%" + filter.getName().trim().toLowerCase() + "%"));

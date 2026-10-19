@@ -111,19 +111,23 @@ public class ManageTransactionStatisticsService {
                                 .setFailedDeposits(failedDeposits);
 
                 cashFlowData.forEach(row -> reply.addCashFlowTrend(CashFlowItem.newBuilder()
-                                .setDate(row[0].toString())
-                                .setCashIn(((Number) row[1]).longValue())
-                                .setCashOut(((Number) row[2]).longValue()).build()));
+                                .setDate(row[0] != null ? row[0].toString() : "")
+                                .setCashIn(parseToLongSafely(row[1])) // 🌟 SỬA Ở ĐÂY
+                                .setCashOut(parseToLongSafely(row[2])) // 🌟 SỬA Ở ĐÂY
+                                .build()));
 
                 statusData.forEach(row -> reply.addStatusBreakdown(StatusItem.newBuilder()
-                                .setStatus(row[0].toString())
-                                .setCount(((Number) row[1]).longValue()).build()));
+                                .setStatus(row[0] != null ? row[0].toString() : "")
+                                .setCount(parseToLongSafely(row[1])) // 🌟 SỬA Ở ĐÂY
+                                .build()));
 
                 topSpendersData.forEach(row -> reply.addTopSpenders(TopSpenderItem.newBuilder()
-                                .setUserId(((Number) row[0]).longValue())
+                                .setUserId(parseToLongSafely(row[0]))
                                 .setName(row[1] != null ? row[1].toString() : "")
                                 .setEmail(row[2] != null ? row[2].toString() : "")
-                                .setTotalSpent(((Number) row[3]).longValue()).build()));
+                                .setAvatar(row[3] != null ? row[3].toString() : "")
+                                .setTotalSpent(parseToLongSafely(row[4]))
+                                .build()));
 
                 reply.addAllRecentDeposits(recentDeposits.stream().map(this::mapToLog).collect(Collectors.toList()));
                 reply.addAllTopSpendingLogs(topSpendings.stream().map(this::mapToLog).collect(Collectors.toList()));
@@ -133,8 +137,8 @@ public class ManageTransactionStatisticsService {
 
         private TransactionLogItem mapToLog(Transaction t) {
                 return TransactionLogItem.newBuilder()
-                                // 🌟 FIX LỖI NPE Ở ĐÂY: Thêm check null cho getTxnId()
                                 .setTxnId(t.getTxnId() != null ? t.getTxnId() : "")
+                                .setUserId(t.getUserId() != null ? t.getUserId() : 0L) // 🌟 THÊM DÒNG NÀY
                                 .setUserName(t.getUserName() != null ? t.getUserName() : "")
                                 .setUserEmail(t.getUserEmail() != null ? t.getUserEmail() : "")
                                 .setAmount(t.getAmount() != null ? Math.abs(t.getAmount()) : 0L)
@@ -235,5 +239,22 @@ public class ManageTransactionStatisticsService {
                                 .build()));
 
                 return reply.build();
+        }
+
+        private long parseToLongSafely(Object obj) {
+                if (obj == null)
+                        return 0L;
+                if (obj instanceof Number) {
+                        return ((Number) obj).longValue();
+                }
+                if (obj instanceof String) {
+                        try {
+                                // Xử lý trường hợp DB trả về String dạng "1000.0" hoặc "0"
+                                return Double.valueOf(obj.toString()).longValue();
+                        } catch (NumberFormatException e) {
+                                return 0L;
+                        }
+                }
+                return 0L;
         }
 }

@@ -1,4 +1,5 @@
-using StatisticService.Grpc.Identity.Statistic;
+using StatisticService.Grpc.Identity; // Thêm dòng này (Core Identity)
+using StatisticService.Grpc.Identity.Statistic; // (Thống kê Identity)
 using StatisticService.Grpc.Listing.Statistic;
 using StatisticService.Grpc.Payment.Statistic;
 using StatisticService.Modules.Admin.DTOs;
@@ -9,34 +10,37 @@ namespace StatisticService.Modules.Admin.Services
     {
         private readonly InternalListingStatisticService.InternalListingStatisticServiceClient _listingClient;
         private readonly InternalPaymentStatisticService.InternalPaymentStatisticServiceClient _paymentClient;
-        private readonly InternalIdentityStatisticService.InternalIdentityStatisticServiceClient _identityClient;
+        private readonly InternalIdentityStatisticService.InternalIdentityStatisticServiceClient _identityStatClient;
+        private readonly InternalIdentityService.InternalIdentityServiceClient _identityCoreClient;
 
         public SystemOverviewService(
             InternalListingStatisticService.InternalListingStatisticServiceClient listingClient,
             InternalPaymentStatisticService.InternalPaymentStatisticServiceClient paymentClient,
-            InternalIdentityStatisticService.InternalIdentityStatisticServiceClient identityClient
-        )
+            InternalIdentityStatisticService.InternalIdentityStatisticServiceClient identityStatClient,
+            InternalIdentityService.InternalIdentityServiceClient identityCoreClient
+        ) // 🌟 Thêm Inject
         {
             _listingClient = listingClient;
             _paymentClient = paymentClient;
-            _identityClient = identityClient;
+            _identityStatClient = identityStatClient;
+            _identityCoreClient = identityCoreClient;
         }
 
         public async Task<SystemOverviewResponse> GetSystemOverviewAsync(int days)
         {
             var emptyReq = new Google.Protobuf.WellKnownTypes.Empty();
 
-            // Gọi song song TẤT CẢ các gRPC endpoint
+            // 1. Gọi song song 4 endpoints thống kê
             var listingTask = _listingClient
                 .GetSystemListingStatsAsync(new SystemListingRequest { Days = days })
                 .ResponseAsync;
             var paymentTask = _paymentClient
                 .GetSystemRevenueStatsAsync(new SystemRevenueRequest { Days = days })
                 .ResponseAsync;
-            var userTrendTask = _identityClient
+            var userTrendTask = _identityStatClient
                 .GetNewUserTrendAsync(new NewUserTrendRequest { Days = days })
                 .ResponseAsync;
-            var verificationTask = _identityClient
+            var verificationTask = _identityStatClient
                 .GetPendingVerificationCountAsync(emptyReq)
                 .ResponseAsync;
 
@@ -47,7 +51,26 @@ namespace StatisticService.Modules.Admin.Services
             var userTrendData = userTrendTask.Result;
             var verificationData = verificationTask.Result;
 
-            // Tính toán %
+            // 2. Gom tất cả UserIds cần lấy Info (Top Spenders + Top Posts)
+            var userIdsToFetch = new HashSet<long>();
+            foreach (var spender in paymentData.TopSpenders)
+                userIdsToFetch.Add(spender.UserId);
+
+            // Giả định TopPosts DTO hiện tại có chứa UserId. Nếu không có (do DTO cũ), bạn hãy update DTO PostLogDto thêm trường UserId nhé.
+            // foreach (var post in listingData.TopPosts) userIdsToFetch.Add(post.UserId);
+
+            // 3. Gọi Identity Service lấy Data hàng loạt
+            var userDict = new Dictionary<long, UserInfo>();
+            if (userIdsToFetch.Any())
+            {
+                var req = new GetUsersInfoRequest();
+                req.UserIds.AddRange(userIdsToFetch);
+
+                var identityReply = await _identityCoreClient.GetUsersInfoAsync(req);
+                userDict = new Dictionary<long, UserInfo>(identityReply.Users);
+            }
+
+            // 4. Tính toán %
             double revenueGrowth = 0.0;
             if (paymentData.PrevRevenue > 0)
                 revenueGrowth =
@@ -63,7 +86,7 @@ namespace StatisticService.Modules.Admin.Services
                     ? ((double)listingData.VipListings / listingData.ActiveListings) * 100
                     : 0.0;
 
-            // Map MacroTrends (Merge Revenue và NewUsers theo Date)
+            // 5. Map MacroTrends (Merge Revenue và NewUsers theo Date)
             var macroMap = new Dictionary<string, MacroTrend>();
             foreach (var r in paymentData.RevenueTrend)
             {
@@ -80,6 +103,20 @@ namespace StatisticService.Modules.Admin.Services
                     macroMap[u.Date] = new MacroTrend { Date = u.Date, NewUsers = u.Count };
                 }
             }
+
+            // 6. Enrich Data & Trả về Frontend
+            var finalTopSpenders = paymentData
+                .TopSpenders.Select(spender =>
+                {
+                    if (userDict.TryGetValue(spender.UserId, out var userInfo))
+                    {
+                        spender.Name = userInfo.Name;
+                        spender.Email = userInfo.Email;
+                        spender.Avatar = userInfo.Avatar; // Map cứng luôn Avatar thật
+                    }
+                    return spender;
+                })
+                .ToList();
 
             return new SystemOverviewResponse
             {
@@ -105,7 +142,7 @@ namespace StatisticService.Modules.Admin.Services
                         Count = x.Count,
                     })
                     .ToList(),
-                TopSpenders = paymentData.TopSpenders.ToList(),
+                TopSpenders = finalTopSpenders,
                 TopPosts = listingData.TopPosts.ToList(),
             };
         }

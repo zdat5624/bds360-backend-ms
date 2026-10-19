@@ -75,7 +75,7 @@ bds360-backend
 │     │  │           │  │  └─ MapperConfiguration.java
 │     │  │           │  └─ util
 │     │  │           ├─ grpc
-│     │  │           │  ├─ InternalIdentityGrpcService.txt
+│     │  │           │  ├─ InternalIdentityGrpcService.java
 │     │  │           │  └─ InternalIdentityStatisticGrpcService.java
 │     │  │           ├─ IdentityServiceApplication.java
 │     │  │           ├─ modules
@@ -101,6 +101,9 @@ bds360-backend
 │     │  │           │  │     ├─ AuthService.java
 │     │  │           │  │     └─ ForgotPasswordService.java
 │     │  │           │  ├─ statistic
+│     │  │           │  │  ├─ dto
+│     │  │           │  │  │  └─ response
+│     │  │           │  │  │     └─ DailyStatProjection.java
 │     │  │           │  │  ├─ repository
 │     │  │           │  │  │  └─ UserStatisticRepository.java
 │     │  │           │  │  └─ service
@@ -135,6 +138,7 @@ bds360-backend
 │     │  │           │     │  ├─ UserRepository.java
 │     │  │           │     │  └─ VerificationSubmissionRepository.java
 │     │  │           │     ├─ service
+│     │  │           │     │  ├─ UserGrpcQueryService.java
 │     │  │           │     │  ├─ UserService.java
 │     │  │           │     │  └─ VerificationService.java
 │     │  │           │     └─ specification
@@ -519,6 +523,9 @@ bds360-backend
 │     │  │           │  └─ InternalPaymentStatisticGrpcService.java
 │     │  │           ├─ modules
 │     │  │           │  ├─ statistic
+│     │  │           │  │  ├─ dto
+│     │  │           │  │  │  └─ response
+│     │  │           │  │  │     └─ DailyStatProjection.java
 │     │  │           │  │  ├─ repository
 │     │  │           │  │  │  └─ TransactionStatisticRepository.java
 │     │  │           │  │  └─ service
@@ -662,7 +669,7 @@ bds360-backend
    ├─ data
    │  └─ users.csv
    └─ proto
-      ├─ identity.proto.txt
+      ├─ identity.proto
       ├─ listing.proto.txt
       ├─ notification.proto.txt
       ├─ payment.proto.txt

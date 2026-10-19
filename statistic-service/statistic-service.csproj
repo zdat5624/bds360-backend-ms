@@ -27,6 +27,8 @@
   <ItemGroup>
     <Protobuf Include="../_shared/proto/statistic/*_statistic.proto"
               GrpcServices="Client" />
+              <Protobuf Include="../_shared/proto/identity.proto"
+              GrpcServices="Client" />
   </ItemGroup>
 
  

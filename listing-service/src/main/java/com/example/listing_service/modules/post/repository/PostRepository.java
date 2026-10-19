@@ -3,8 +3,6 @@ package com.example.listing_service.modules.post.repository;
 import java.time.Instant;
 import java.util.List;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -24,19 +22,6 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
         @Transactional
         @Query("UPDATE Post p SET p.status = :newStatus WHERE p.expireDate < :now")
         int updateExpiredPosts(@Param("newStatus") PostStatus newStatus, @Param("now") Instant now);
-
-        @Query("SELECT p FROM Post p WHERE p.createdBy = :userEmail " +
-                        "AND (:status IS NULL OR p.status = :status) " +
-                        "AND (:type IS NULL OR p.type = :type) " +
-                        "AND (p.deletedByUser = false) " +
-                        "AND (:provinceCode IS NULL OR p.province.code = :provinceCode) " +
-                        "AND (:postId IS NULL OR p.id = :postId)")
-        Page<Post> findMyPosts(@Param("userEmail") String userEmail,
-                        @Param("status") PostStatus status,
-                        @Param("type") ListingType type,
-                        @Param("provinceCode") Long provinceCode,
-                        @Param("postId") Long postId,
-                        Pageable pageable);
 
         @Query("SELECT new com.example.listing_service.modules.post.dto.response.MapPostResponse(" +
                         "p.latitude, p.longitude, p.id, p.vip.id, p.price) " +

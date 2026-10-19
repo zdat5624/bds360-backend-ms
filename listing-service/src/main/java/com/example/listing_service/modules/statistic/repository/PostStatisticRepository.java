@@ -50,11 +50,11 @@ public interface PostStatisticRepository extends JpaRepository<Post, Long> {
         // Top 10
         @Query("SELECT p.userId as userId, " +
                         "p.authorName as name, " +
-                        "p.createdBy as email, " +
+                        "p.authorEmail as email, " +
                         "COUNT(p.id) as activePostCount " +
                         "FROM Post p " +
                         "WHERE p.status IN (:statuses) " +
-                        "GROUP BY p.userId, p.authorName, p.createdBy " +
+                        "GROUP BY p.userId, p.authorName, p.authorEmail " +
                         "ORDER BY COUNT(p.id) DESC")
         List<Object[]> getTopAgentsByActivePostsNative(
                         @Param("statuses") List<PostStatus> statuses,

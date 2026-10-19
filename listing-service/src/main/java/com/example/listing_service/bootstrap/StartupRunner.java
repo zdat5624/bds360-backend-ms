@@ -85,7 +85,8 @@ public class StartupRunner implements CommandLineRunner {
     }
 
     private void initSampleAddress() {
-        if (this.provinceRepository.count() > 0 || this.districtRepository.count() > 0 || this.wardRepository.count() > 0) {
+        if (this.provinceRepository.count() > 0 || this.districtRepository.count() > 0
+                || this.wardRepository.count() > 0) {
             log.info(">>> SKIP! INIT ADDRESS DATA: ALREADY HAVE DATA ... ");
             return;
         }
@@ -93,7 +94,9 @@ public class StartupRunner implements CommandLineRunner {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             try (InputStream inputStream = new ClassPathResource("data/address.json").getInputStream()) {
-                List<CreateProvinceRequest> provinceDTOs = objectMapper.readValue(inputStream, new TypeReference<List<CreateProvinceRequest>>() {});
+                List<CreateProvinceRequest> provinceDTOs = objectMapper.readValue(inputStream,
+                        new TypeReference<List<CreateProvinceRequest>>() {
+                        });
                 for (CreateProvinceRequest provinceDTO : provinceDTOs) {
                     Province province = convertToEntity(provinceDTO);
                     provinceRepository.save(province);
@@ -166,18 +169,21 @@ public class StartupRunner implements CommandLineRunner {
             String line;
             boolean isFirstLine = true;
             while ((line = reader.readLine()) != null) {
-                if (isFirstLine) { isFirstLine = false; continue; }
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
+                }
 
                 String[] cols = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-                for (int i = 0; i < cols.length; i++) cols[i] = cols[i].replaceAll("^\"|\"$", "");
-                
+                for (int i = 0; i < cols.length; i++)
+                    cols[i] = cols[i].replaceAll("^\"|\"$", "");
+
                 mockUsers.add(new MockUser(
-                    Long.parseLong(cols[0]), 
-                    cols[6], 
-                    cols[9], 
-                    cols[11], 
-                    cols[2]
-                ));
+                        Long.parseLong(cols[0]),
+                        cols[6],
+                        cols[9],
+                        cols[11],
+                        cols[2]));
             }
         } catch (Exception e) {
             log.error(">>> LỖI ĐỌC MOCK DATA TỪ CSV", e);
@@ -253,7 +259,8 @@ public class StartupRunner implements CommandLineRunner {
                     if (isHcm) {
                         if (hcmCurrentCount >= hcmClusterSize || hcmClusterDist == null) {
                             hcmCurrentCount = 0;
-                            hcmClusterSize = (random.nextInt(100) < 70) ? (8 + random.nextInt(8)) : (3 + random.nextInt(5));
+                            hcmClusterSize = (random.nextInt(100) < 70) ? (8 + random.nextInt(8))
+                                    : (3 + random.nextInt(5));
                             hcmClusterCat = categories.get(random.nextInt(categories.size()));
 
                             List<District> dists = districtCache.computeIfAbsent(hcmcProvince.getCode(),
@@ -285,7 +292,8 @@ public class StartupRunner implements CommandLineRunner {
                     }
 
                     if (selectedDist == null) {
-                        if (isHcm) hcmCurrentCount = hcmClusterSize; 
+                        if (isHcm)
+                            hcmCurrentCount = hcmClusterSize;
                         i--;
                         continue;
                     }
@@ -376,8 +384,9 @@ public class StartupRunner implements CommandLineRunner {
                     post.setAuthorName(mockUser.getName());
                     post.setAuthorPhone(mockUser.getPhone());
                     post.setAuthorAvatar(mockUser.getAvatar());
+                    post.setAuthorEmail(mockUser.getEmail());
                     post.setCreatedBy(mockUser.getEmail());
-                    
+
                     post.setNotifyOnView(random.nextBoolean()); // Điền thuộc tính notifyOnView
 
                     post.setCategory(selectedCat);
@@ -438,8 +447,9 @@ public class StartupRunner implements CommandLineRunner {
 
         List<Post> allPosts = postRepository.findAll();
         List<MockUser> allUsers = loadMockUsersFromCsv();
-        
-        if (allPosts.isEmpty() || allUsers.isEmpty()) return;
+
+        if (allPosts.isEmpty() || allUsers.isEmpty())
+            return;
 
         List<Post> activePosts = allPosts.stream()
                 .filter(p -> p.getStatus() == PostStatus.APPROVED || p.getStatus() == PostStatus.REVIEW_LATER)
@@ -465,7 +475,8 @@ public class StartupRunner implements CommandLineRunner {
                         Long viewerId = (random.nextInt(100) < 30) ? randomUser.getId() : null;
                         Instant randomViewedAt = now.minusSeconds(random.nextLong(30L * 24 * 60 * 60));
 
-                        batchArgs.add(new Object[] { post.getId(), viewerId, "192.168.1." + random.nextInt(255), randomViewedAt });
+                        batchArgs.add(new Object[] { post.getId(), viewerId, "192.168.1." + random.nextInt(255),
+                                randomViewedAt });
 
                         if (batchArgs.size() >= 1000) {
                             jdbcTemplate.batchUpdate(sql, batchArgs);
@@ -485,7 +496,8 @@ public class StartupRunner implements CommandLineRunner {
         // 2. SEED TIN ĐÃ LƯU
         executor.submit(() -> {
             try {
-                if (activePosts.isEmpty()) return;
+                if (activePosts.isEmpty())
+                    return;
                 String sql = "INSERT INTO saved_posts (user_id, post_id, saved_at) VALUES (?, ?, ?)";
                 List<Object[]> batchArgs = new ArrayList<>();
                 ThreadLocalRandom random = ThreadLocalRandom.current();
@@ -869,8 +881,8 @@ public class StartupRunner implements CommandLineRunner {
             } else {
                 // 🌟 FIX CHUẨN 100%: Biến "tên (số).jpg" thành "tên_số.jpg"
                 String fixedName = selectedImageName
-                        .replace(" (", "_") 
-                        .replace(")", ""); 
+                        .replace(" (", "_")
+                        .replace(")", "");
                 image.setUrl(baseImageUrl + fixedName);
             }
 
@@ -890,17 +902,32 @@ public class StartupRunner implements CommandLineRunner {
         private final String avatar;
 
         public MockUser(Long id, String email, String name, String phone, String avatar) {
-            this.id = id; 
-            this.email = email; 
-            this.name = name; 
-            this.phone = phone; 
+            this.id = id;
+            this.email = email;
+            this.name = name;
+            this.phone = phone;
             this.avatar = avatar;
         }
-        public Long getId() { return id; }
-        public String getEmail() { return email; }
-        public String getName() { return name; }
-        public String getPhone() { return phone; }
-        public String getAvatar() { return avatar; }
+
+        public Long getId() {
+            return id;
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getPhone() {
+            return phone;
+        }
+
+        public String getAvatar() {
+            return avatar;
+        }
     }
 
     private static final List<String> STREET_NAMES = Arrays.asList(
@@ -916,10 +943,15 @@ public class StartupRunner implements CommandLineRunner {
             "J15", "J21", "J30", "J40", "K3", "K9", "K18", "K27", "K36", "K45");
 
     private static final String GENERAL_DESCRIPTION = "\n\n**Thông tin bổ sung**:\n" +
-            "- Vị trí đắc địa: Nằm trong khu vực phát triển sôi động, xung quanh có đầy đủ tiện ích như trường học quốc tế, bệnh viện đa khoa, siêu thị lớn, công viên xanh mát và các trung tâm thương mại hiện đại.\n" +
-            "- Giao thông thuận tiện: Gần các trục đường chính và tuyến giao thông huyết mạch, dễ dàng di chuyển đến trung tâm thành phố hoặc các khu vực lân cận trong thời gian ngắn.\n" +
-            "- Tiện ích đa dạng: Cư dân được hưởng các tiện ích cao cấp như hồ bơi, phòng gym, khu vui chơi trẻ em, không gian BBQ ngoài trời, và hệ thống an ninh 24/7 đảm bảo sự an toàn tuyệt đối.\n" +
-            "- Hỗ trợ toàn diện: Đội ngũ tư vấn chuyên nghiệp sẵn sàng hỗ trợ từ A-Z, bao gồm xem nhà miễn phí, tư vấn pháp lý nhanh chóng, và đàm phán giá tốt nhất để bạn có được giao dịch hoàn hảo.\n" +
-            "- Cam kết chất lượng: Chúng tôi cung cấp thông tin minh bạch, chính xác, đảm bảo mọi chi tiết về bất động sản đều được kiểm tra kỹ lưỡng trước khi giới thiệu đến bạn.\n" +
+            "- Vị trí đắc địa: Nằm trong khu vực phát triển sôi động, xung quanh có đầy đủ tiện ích như trường học quốc tế, bệnh viện đa khoa, siêu thị lớn, công viên xanh mát và các trung tâm thương mại hiện đại.\n"
+            +
+            "- Giao thông thuận tiện: Gần các trục đường chính và tuyến giao thông huyết mạch, dễ dàng di chuyển đến trung tâm thành phố hoặc các khu vực lân cận trong thời gian ngắn.\n"
+            +
+            "- Tiện ích đa dạng: Cư dân được hưởng các tiện ích cao cấp như hồ bơi, phòng gym, khu vui chơi trẻ em, không gian BBQ ngoài trời, và hệ thống an ninh 24/7 đảm bảo sự an toàn tuyệt đối.\n"
+            +
+            "- Hỗ trợ toàn diện: Đội ngũ tư vấn chuyên nghiệp sẵn sàng hỗ trợ từ A-Z, bao gồm xem nhà miễn phí, tư vấn pháp lý nhanh chóng, và đàm phán giá tốt nhất để bạn có được giao dịch hoàn hảo.\n"
+            +
+            "- Cam kết chất lượng: Chúng tôi cung cấp thông tin minh bạch, chính xác, đảm bảo mọi chi tiết về bất động sản đều được kiểm tra kỹ lưỡng trước khi giới thiệu đến bạn.\n"
+            +
             "- Cơ hội không thể bỏ lỡ: Hãy liên hệ ngay hôm nay để được tư vấn chi tiết, đặt lịch xem nhà thực tế, và nhận ưu đãi đặc biệt dành riêng cho khách hàng sớm nhất!";
 }
