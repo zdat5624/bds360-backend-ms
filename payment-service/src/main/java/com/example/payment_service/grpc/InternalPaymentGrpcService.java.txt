@@ -1,0 +1,74 @@
+package com.example.payment_service.grpc;
+
+import com.example.payment_service.modules.transaction.constant.TransactionStatus;
+import com.example.payment_service.modules.transaction.repository.TransactionRepository;
+
+import io.grpc.stub.StreamObserver;
+import lombok.RequiredArgsConstructor;
+import net.devh.boot.grpc.server.service.GrpcService;
+import payment.InternalPaymentGrpcServiceGrpc;
+import payment.Payment.MonthlyRevenueItem;
+import payment.Payment.MonthlyRevenueListReply;
+import payment.Payment.RevenueStatsReply;
+import payment.Payment.RevenueStatsRequest;
+import payment.Payment.YearRequest;
+
+// 🌟 Annotation @GrpcService giúp Spring Boot tự động mở cổng gRPC 
+@GrpcService
+@RequiredArgsConstructor
+public class InternalPaymentGrpcService extends InternalPaymentGrpcServiceGrpc.InternalPaymentGrpcServiceImplBase {
+
+    private final TransactionRepository transactionRepository;
+
+    // ==========================================
+    // 1. TRẢ VỀ TỔNG DOANH THU NĂM VÀ THÁNG
+    // ==========================================
+    @Override
+    public void getRevenueStats(RevenueStatsRequest request, StreamObserver<RevenueStatsReply> responseObserver) {
+        int year = request.getYear();
+        int month = request.getMonth();
+
+        // 🌟 Gọi Repository của bạn
+        Long totalRevenueYear = transactionRepository.sumAmountByYearAndStatus(year, TransactionStatus.SUCCESS);
+        Long totalRevenueMonth = transactionRepository.sumAmountByYearMonthAndStatus(year, month,
+                TransactionStatus.SUCCESS);
+
+        System.out.println("Total revenue for year " + year + ": " + totalRevenueYear);
+        System.out.println("Total revenue for month " + month + ": " + totalRevenueMonth);
+
+        // Đóng gói dữ liệu trả về cho .NET
+        RevenueStatsReply reply = RevenueStatsReply.newBuilder()
+                .setTotalRevenueYear(totalRevenueYear != null ? totalRevenueYear : 0L)
+                .setTotalRevenueMonth(totalRevenueMonth != null ? totalRevenueMonth : 0L)
+                .build();
+
+        responseObserver.onNext(reply);
+        responseObserver.onCompleted();
+    }
+
+    // ==========================================
+    // 2. TRẢ VỀ DANH SÁCH DOANH THU 12 THÁNG
+    // ==========================================
+    @Override
+    public void getMonthlyRevenue(YearRequest request, StreamObserver<MonthlyRevenueListReply> responseObserver) {
+        int year = request.getYear();
+
+        MonthlyRevenueListReply.Builder replyBuilder = MonthlyRevenueListReply.newBuilder();
+
+        // Chạy vòng lặp lấy doanh thu từng tháng
+        for (int month = 1; month <= 12; month++) {
+            Long revenue = transactionRepository.sumAmountByYearMonthAndStatus(year, month, TransactionStatus.SUCCESS);
+
+            MonthlyRevenueItem item = MonthlyRevenueItem.newBuilder()
+                    .setMonth(month)
+                    .setRevenue(revenue != null ? revenue : 0L)
+                    .build();
+
+            replyBuilder.addItems(item);
+        }
+        System.out.println("Monthly revenue for year " + year + ": " + replyBuilder.getItemsList());
+
+        responseObserver.onNext(replyBuilder.build());
+        responseObserver.onCompleted();
+    }
+}

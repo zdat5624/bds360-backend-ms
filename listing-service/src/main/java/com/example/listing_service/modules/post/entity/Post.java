@@ -150,7 +150,7 @@ public class Post {
     private Instant createdAt;
     private Instant updatedAt;
     private Instant pushedAt;
-    private String createdBy;
+    private String createdBy; // Email của người user author
     private String updatedBy;
 
     @PrePersist

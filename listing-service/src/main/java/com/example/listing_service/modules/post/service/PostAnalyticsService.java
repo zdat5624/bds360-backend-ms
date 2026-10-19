@@ -22,6 +22,7 @@ import com.example.listing_service.modules.post.dto.response.PostViewChartRespon
 import com.example.listing_service.modules.post.dto.response.PriceHistoryResponse;
 import com.example.listing_service.modules.post.entity.Post;
 import com.example.listing_service.modules.post.entity.PostViewHistory;
+import com.example.listing_service.modules.post.repository.PostAnalyticsRepository;
 import com.example.listing_service.modules.post.repository.PostRepository;
 import com.example.listing_service.modules.post.repository.PostViewHistoryRepository;
 import com.example.listing_service.security.dto.UserContext;
@@ -35,6 +36,8 @@ import lombok.RequiredArgsConstructor;
 public class PostAnalyticsService {
 
     private final PostRepository postRepository;
+    // 🌟 INJECT REPO MỚI TẠO VÀO ĐÂY
+    private final PostAnalyticsRepository postAnalyticsRepository;
     private final PostViewHistoryRepository postViewHistoryRepository;
 
     private final Cache<String, Boolean> viewSpamGuard = Caffeine.newBuilder()
@@ -60,9 +63,8 @@ public class PostAnalyticsService {
 
             PostViewHistory history = PostViewHistory.builder()
                     .post(post)
-                    .userId(currentUser.getId())
+                    .userId(currentUser != null ? currentUser.getId() : null)
                     .ipAddress(clientIp)
-                    // prePersist sẽ tự lo gán Instant.now() cho viewedAt
                     .build();
             postViewHistoryRepository.save(history);
         }
@@ -70,51 +72,37 @@ public class PostAnalyticsService {
 
     @Transactional(readOnly = true)
     public List<PostViewChartResponse> getPostViewChartData(UserContext currentUser, Long postId, Integer daysAgo) {
-
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = endDate.minusDays(daysAgo);
         Instant startInstant = startDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
 
-        // Lấy data từ DB (bị thiếu các ngày 0 view)
         List<Object[]> rawData = postViewHistoryRepository.countDailyViewsByPostNative(postId, startInstant);
 
-        // Chuyển rawData thành Map<Ngày, Số View> để tra cứu siêu nhanh
         Map<String, Long> viewMap = rawData.stream()
                 .collect(Collectors.toMap(
                         row -> row[0].toString(),
                         row -> ((Number) row[1]).longValue()));
 
         List<PostViewChartResponse> finalResult = new ArrayList<>();
-
-        // Vòng lặp đắp data: Đi từ startDate đến endDate
         LocalDate currentDate = startDate;
         while (!currentDate.isAfter(endDate)) {
-            String dateString = currentDate.toString(); // Format: YYYY-MM-DD
-            // Lấy view từ Map, nếu không có thì trả về 0
+            String dateString = currentDate.toString();
             Long views = viewMap.getOrDefault(dateString, 0L);
             finalResult.add(new PostViewChartResponse(dateString, views));
-
-            currentDate = currentDate.plusDays(1); // Tiến lên 1 ngày
+            currentDate = currentDate.plusDays(1);
         }
-
         return finalResult;
     }
 
-    // 2. CẬP NHẬT HÀM THỐNG KÊ THEO THÁNG (Tự điền 0)
     @Transactional(readOnly = true)
     public List<PostViewChartResponse> getMonthlyPostViewChartData(UserContext currentUser, Long postId,
             Integer monthsAgo) {
-
         YearMonth endMonth = YearMonth.now();
         YearMonth startMonth = endMonth.minusMonths(monthsAgo);
-
-        // Lấy Instant của ngày mùng 1 tháng bắt đầu
         Instant startInstant = startMonth.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
 
-        // Lấy data từ DB
         List<Object[]> rawData = postViewHistoryRepository.countMonthlyViewsByPostNative(postId, startInstant);
 
-        // Chuyển rawData thành Map<Tháng, Số View>
         Map<String, Long> viewMap = rawData.stream()
                 .collect(Collectors.toMap(
                         row -> row[0].toString(),
@@ -122,17 +110,13 @@ public class PostAnalyticsService {
 
         List<PostViewChartResponse> finalResult = new ArrayList<>();
         DateTimeFormatter monthFormatter = DateTimeFormatter.ofPattern("yyyy-MM");
-
-        // Vòng lặp đắp data: Đi từ startMonth đến endMonth
         YearMonth currentMonth = startMonth;
         while (!currentMonth.isAfter(endMonth)) {
-            String monthString = currentMonth.format(monthFormatter); // Format: YYYY-MM
+            String monthString = currentMonth.format(monthFormatter);
             Long views = viewMap.getOrDefault(monthString, 0L);
             finalResult.add(new PostViewChartResponse(monthString, views));
-
-            currentMonth = currentMonth.plusMonths(1); // Tiến lên 1 tháng
+            currentMonth = currentMonth.plusMonths(1);
         }
-
         return finalResult;
     }
 
@@ -142,27 +126,25 @@ public class PostAnalyticsService {
         YearMonth startMonth = endMonth.minusMonths(request.getMonths() - 1);
         Instant startInstant = startMonth.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
 
-        // 1. Thử lấy dữ liệu chi tiết nhất có thể
-        List<Object[]> rawData = postRepository.findMonthlyPriceStats(
+        // 🌟 GỌI BẰNG postAnalyticsRepository
+        List<Object[]> rawData = postAnalyticsRepository.findMonthlyPriceStats(
                 request.getType(), startInstant, request.getCategoryId(),
                 request.getProvinceCode(), request.getDistrictCode(), request.getWardCode());
 
         String note = null;
 
-        // 2. LOGIC FALLBACK BIỂU ĐỒ
         if (request.getWardCode() != null && rawData.size() < 2) {
-            rawData = postRepository.findMonthlyPriceStats(
+            rawData = postAnalyticsRepository.findMonthlyPriceStats(
                     request.getType(), startInstant, request.getCategoryId(),
-                    request.getProvinceCode(), request.getDistrictCode(), null); // Bỏ Ward
+                    request.getProvinceCode(), request.getDistrictCode(), null);
             note = "Dữ liệu tại khu vực này chưa đủ để thống kê. Biểu đồ đang hiển thị mức giá trung bình của toàn Quận/Huyện.";
         } else if (request.getDistrictCode() != null && rawData.size() < 2) {
-            rawData = postRepository.findMonthlyPriceStats(
+            rawData = postAnalyticsRepository.findMonthlyPriceStats(
                     request.getType(), startInstant, request.getCategoryId(),
-                    request.getProvinceCode(), null, null); // Bỏ District
+                    request.getProvinceCode(), null, null);
             note = "Dữ liệu tại khu vực này chưa đủ để thống kê. Biểu đồ đang hiển thị mức giá trung bình của toàn Tỉnh/Thành phố.";
         }
 
-        // 3. Xử lý làm đầy (Fill) dữ liệu
         Map<String, PriceHistoryResponse.PriceTrend> dataMap = rawData.stream().collect(Collectors.toMap(
                 row -> row[0].toString(),
                 row -> PriceHistoryResponse.PriceTrend.builder()
@@ -177,7 +159,6 @@ public class PostAnalyticsService {
         String peakMonth = null;
         Double firstAvailablePrice = null;
         Double currentAvgPrice = null;
-
         PriceHistoryResponse.PriceTrend lastKnownData = null;
         YearMonth current = startMonth;
 
@@ -215,7 +196,6 @@ public class PostAnalyticsService {
             current = current.plusMonths(1);
         }
 
-        // 4. Tính % tăng giảm
         Double changePercent = 0.0;
         if (firstAvailablePrice != null && firstAvailablePrice > 0 && currentAvgPrice != null) {
             changePercent = ((currentAvgPrice - firstAvailablePrice) / firstAvailablePrice) * 100;
@@ -247,20 +227,19 @@ public class PostAnalyticsService {
             throw new AppException(ErrorCode.INVALID_ADDRESS_HIERARCHY);
         }
 
-        List<Object[]> rawData = postRepository.findNearbyWardsPriceStats(
+        // 🌟 GỌI BẰNG postAnalyticsRepository
+        List<Object[]> rawData = postAnalyticsRepository.findNearbyWardsPriceStats(
                 request.getType(), request.getDistrictCode(), request.getCategoryId());
 
         String locType = "WARD";
 
-        // LOGIC FALLBACK SO SÁNH
         if (rawData.size() < 2) {
-            rawData = postRepository.findNearbyDistrictsPriceStats(
+            rawData = postAnalyticsRepository.findNearbyDistrictsPriceStats(
                     request.getType(), request.getProvinceCode(), request.getCategoryId());
             locType = "DISTRICT";
         }
 
         final String finalLocType = locType;
-
         return rawData.stream().map(row -> new NearbyLocationPriceResponse(
                 ((Number) row[0]).longValue(),
                 row[1].toString(),

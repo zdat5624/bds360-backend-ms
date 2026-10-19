@@ -1,0 +1,147 @@
+syntax = "proto3";
+
+package listing.statistic;
+option java_multiple_files = true;
+option csharp_namespace = "StatisticService.Grpc.Listing.Statistic";
+
+import "google/protobuf/empty.proto";
+
+// ==========================================
+// 1. DÙNG CHO ADMIN STATISTICS TỔNG QUAN (CŨ - KHÔNG ĐƯỢC XÓA)
+// ==========================================
+message PendingPostsReply {
+  int64 pendingPosts = 1;
+}
+
+// ==========================================
+// 2. DÙNG CHO MANAGE POST STATISTICS (MỚI)
+// ==========================================
+message PostDashboardRequest {
+  int32 days = 1;
+}
+
+message PostDashboardReply {
+  KpiSummary                kpis            = 1;
+  repeated PostGrowthTrend  supplyTrend     = 2;
+  repeated ListingTypeStats demandStructure = 3;
+  repeated ProvinceStats    topProvinces    = 4;
+  repeated PostLogDto       topViewedPosts  = 5;
+  repeated PostLogDto       latestVipPosts  = 6;
+}
+
+message KpiSummary {
+  int64  activeListings        = 1;
+  int64  newPosts              = 2;
+  double newPostsGrowthPercent = 3;
+  int64  moderationBacklog     = 4;
+  double vipRatio              = 5;
+}
+
+message PostGrowthTrend {
+  string date  = 1;
+  int64  count = 2;
+}
+
+message ListingTypeStats {
+  string type  = 1;
+  int64  count = 2;
+}
+
+message ProvinceStats {
+  string name  = 1;
+  int64  count = 2;
+}
+
+message PostLogDto {
+  int64  id              = 1;
+  string title           = 2;
+  int64  views           = 3;
+  string listingType     = 4;
+  string userName        = 5;
+  string userAvatar      = 6;
+  int32  vipLevel        = 7;
+  int64  createdAtMillis = 8;
+}
+
+// ==========================================
+// HÀM MỚI: LẤY SỐ LIỆU USER BEHAVIOR TỪ POST
+// ==========================================
+message UserPostStatsReply {
+    int64 activeUsers = 1;
+    int64 postersCount = 2;
+    repeated TopAgentItem topAgents = 3;
+}
+
+message TopAgentItem {
+    int64 userId = 1;
+    string name = 2;
+    string email = 3;
+    int64 activePostCount = 4;
+}
+
+message UserListingRequest {
+    int64 userId = 1;
+    string userEmail = 2; // Phục vụ cho các Query cần check Email
+    int32 days = 3;       // Số ngày lấy biểu đồ view
+    int32 topLimit = 4;   // Lấy top mấy bài (mặc định 5)
+}
+
+message UserListingReply {
+    int64 activePosts = 1;
+    int64 totalViews = 2;
+    repeated ViewTrendItem viewChart = 3;
+    repeated StatusBreakdownItem statusChart = 4;
+    repeated TopPostItem topPosts = 5;
+}
+
+message ViewTrendItem {
+    string date = 1;
+    int64 views = 2;
+}
+
+message StatusBreakdownItem {
+    string status = 1;
+    int64 count = 2;
+}
+
+message TopPostItem {
+    int64 postId = 1;
+    string title = 2;
+    int64 views = 3;
+    string vipName = 4;
+}
+
+message SystemListingRequest {
+    int32 days = 1;
+}
+
+message SystemListingReply {
+    int64 activeUsers = 1;
+    int64 activeListings = 2;
+    int64 vipListings = 3;
+    int64 pendingPosts = 4;
+    repeated VipDistributionItem vipDistributions = 5;
+    repeated PostLogDto topPosts = 6;
+}
+
+message VipDistributionItem {
+    int32 vipLevel = 1;
+    int64 count = 2;
+}
+
+// ==========================================
+// ĐỊNH NGHĨA SERVICE CHỨA CẢ 2 HÀM
+// ==========================================
+service InternalListingStatisticService {
+    // Hàm cũ cho AdminStatisticsController
+  rpc GetPendingPostsCount (google.protobuf.Empty) returns (PendingPostsReply);
+
+    // Hàm mới cho ManagePostStatisticsController
+  rpc GetPostDashboardStats (PostDashboardRequest) returns (PostDashboardReply);
+
+  rpc GetUserPostStats (google.protobuf.Empty) returns (UserPostStatsReply);
+
+  rpc GetUserListingStats (UserListingRequest) returns (UserListingReply);
+
+  rpc GetSystemListingStats (SystemListingRequest) returns (SystemListingReply);
+}

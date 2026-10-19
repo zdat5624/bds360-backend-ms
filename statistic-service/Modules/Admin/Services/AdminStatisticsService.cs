@@ -1,56 +1,50 @@
+using Google.Protobuf.WellKnownTypes; // Để dùng được tham số new Empty()
+using StatisticService.Grpc.Identity.Statistic;
+using StatisticService.Grpc.Listing.Statistic;
+using StatisticService.Grpc.Payment.Statistic;
 using StatisticService.Modules.Admin.DTOs;
-using StatisticService.Grpc.Payment; // 🌟 Import Client được sinh tự động từ payment.proto
 
 namespace StatisticService.Modules.Admin.Services;
 
-// Dùng C# 12 Primary Constructor để tiêm gRPC Client và Logger cực gọn
 public class AdminStatisticsService(
-    InternalPaymentGrpcService.InternalPaymentGrpcServiceClient paymentClient,
+    InternalPaymentStatisticService.InternalPaymentStatisticServiceClient paymentClient,
+    InternalIdentityStatisticService.InternalIdentityStatisticServiceClient identityClient,
+    InternalListingStatisticService.InternalListingStatisticServiceClient listingClient,
     ILogger<AdminStatisticsService> logger)
 {
-    // ==========================================
-    // 1. LẤY THỐNG KÊ TỔNG QUAN
-    // ==========================================
     public async Task<AdminStatisticsResponse> GetStatisticsAsync()
     {
         var now = DateTime.UtcNow;
 
-        // 🌟 Gọi gRPC sang Payment Service (Java) để lấy doanh thu
-        var paymentReply = await paymentClient.GetRevenueStatsAsync(
-            new RevenueStatsRequest { Year = now.Year, Month = now.Month }
-        );
+        // Bắn 3 Request gRPC cùng lúc
+        var paymentTask = paymentClient.GetRevenueStatsAsync(new RevenueStatsRequest { Year = now.Year, Month = now.Month }).ResponseAsync;
+        var userTask = identityClient.GetTotalUsersAsync(new Empty()).ResponseAsync;
+        var postTask = listingClient.GetPendingPostsCountAsync(new Empty()).ResponseAsync;
 
-        // Mock data tạm thời cho 2 thông số của Identity và Listing (chưa làm gRPC)
-        long totalUsers = 450;
-        long pendingPosts = 12;
+        // Đợi cả 3 chạy xong
+        await Task.WhenAll(paymentTask, userTask, postTask);
 
-        logger.LogInformation("Đã đồng bộ thành công dữ liệu doanh thu qua gRPC.");
+        var paymentReply = paymentTask.Result;
+        var userReply = userTask.Result;
+        var postReply = postTask.Result;
 
-        // Ghép dữ liệu trả về cho Controller
+        logger.LogInformation("Lấy thành công Thống kê tổng quan từ 3 Microservices.");
+
         return new AdminStatisticsResponse(
             TotalRevenueYear: paymentReply.TotalRevenueYear,
             TotalRevenueMonth: paymentReply.TotalRevenueMonth,
-            TotalUsers: totalUsers,
-            PendingPosts: pendingPosts
+            TotalUsers: userReply.TotalUsers,
+            PendingPosts: postReply.PendingPosts
         );
     }
 
-    // ==========================================
-    // 2. LẤY DOANH THU 12 THÁNG
-    // ==========================================
     public async Task<List<MonthlyRevenueResponse>> GetMonthlyRevenueAsync(int year)
     {
-        // 🌟 Gọi gRPC sang Payment Service lấy mảng 12 tháng
-        var reply = await paymentClient.GetMonthlyRevenueAsync(
-            new YearRequest { Year = year }
-        );
+        MonthlyRevenueListReply reply = await paymentClient.GetMonthlyRevenueAsync(new YearRequest { Year = year });
 
-        // Chuyển đổi (Map) kết quả từ List của gRPC sang List DTO nội bộ của .NET
-        var revenues = reply.Items.Select(item => new MonthlyRevenueResponse(
+        return reply.Items.Select(item => new MonthlyRevenueResponse(
             Month: item.Month,
             Revenue: item.Revenue
         )).ToList();
-
-        return revenues;
     }
 }

@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package identity.statistic;
+option java_multiple_files = true;
+option csharp_namespace = "StatisticService.Grpc.Identity.Statistic";
+
+import "google/protobuf/empty.proto";
+
+message TotalUsersReply {
+    int64 totalUsers = 1;
+}
+
+message TotalBalanceReply {
+    int64 totalBalance = 1;
+}
+
+// ==========================================
+// HÀM MỚI: DÙNG CHO MANAGE USER DASHBOARD
+// ==========================================
+message UserDashboardRequest {
+    int32 days = 1;
+}
+
+message UserDashboardReply {
+    int64 totalUsers = 1;
+    int64 newUsers = 2;
+    int64 prevNewUsers = 3;
+    int64 verifiedCount = 4;
+    int64 unverifiedCount = 5;
+    repeated UserGrowthTrendItem growthTrend = 6;
+}
+
+message UserGrowthTrendItem {
+    string date = 1;
+    int64 newUsers = 2;
+}
+
+message UserBalanceRequest {
+    int64 userId = 1;
+}
+
+message UserBalanceReply {
+    int64 balance = 1;
+}
+
+message PendingVerificationReply {
+    int64 count = 1;
+}
+
+message NewUserTrendRequest {
+    int32 days = 1;
+}
+
+message NewUserTrendReply {
+    repeated NewUserTrendItem items = 1;
+}
+
+message NewUserTrendItem {
+    string date = 1;
+    int64 count = 2;
+}
+
+service InternalIdentityStatisticService {
+    rpc GetTotalUsers (google.protobuf.Empty) returns (TotalUsersReply);
+    rpc GetTotalSystemBalance (google.protobuf.Empty) returns (TotalBalanceReply);
+
+    // Thêm hàm lấy dữ liệu Dashboard
+    rpc GetUserDashboardStats (UserDashboardRequest) returns (UserDashboardReply);
+
+    rpc GetUserBalance (UserBalanceRequest) returns (UserBalanceReply);
+
+    rpc GetPendingVerificationCount (google.protobuf.Empty) returns (PendingVerificationReply);
+    rpc GetNewUserTrend (NewUserTrendRequest) returns (NewUserTrendReply);
+}

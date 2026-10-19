@@ -41,5 +41,6 @@ public interface PostViewHistoryRepository extends JpaRepository<PostViewHistory
                         "JOIN posts p ON vh.post_id = p.id " +
                         "WHERE p.user_id = :userId AND vh.viewed_at >= :startDate " + // 🌟 Đổi created_at -> viewed_at
                         "GROUP BY DATE(vh.viewed_at)", nativeQuery = true) // 🌟 Đổi created_at -> viewed_at
-        List<Object[]> countDailyViewsByPostOwnerNative(Long userId, Instant startDate);
+        List<Object[]> countDailyViewsByPostOwnerNative(@Param("userId") Long userId,
+                        @Param("startDate") Instant startDate);
 }

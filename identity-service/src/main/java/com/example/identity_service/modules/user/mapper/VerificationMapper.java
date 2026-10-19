@@ -16,6 +16,6 @@ public interface VerificationMapper {
     @Mapping(target = "userName", source = "user.name")
     @Mapping(target = "userEmail", source = "user.email")
     @Mapping(target = "userAvatar", source = "user.avatar")
-    VerificationResponse toResponse(VerificationSubmission verificationSubmission); // 🌟 Đổi kiểu tham số
+    VerificationResponse toResponse(VerificationSubmission verificationSubmission);
 
 }

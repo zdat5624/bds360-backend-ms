@@ -25,12 +25,10 @@
   </ItemGroup>
 
   <ItemGroup>
-  <!-- <Protobuf Include="../_shared/proto/common.proto" GrpcServices="Client" /> -->
-  <!-- <Protobuf Include="../_shared/proto/identity.proto" GrpcServices="Client" />
-  <Protobuf Include="../_shared/proto/listing.proto" GrpcServices="Client" />
-  
-  <Protobuf Include="../_shared/proto/statistic.proto" GrpcServices="Client" /> -->
-  <Protobuf Include="../_shared/proto/payment.proto" GrpcServices="Client" />
-</ItemGroup>
+    <Protobuf Include="../_shared/proto/statistic/*_statistic.proto"
+              GrpcServices="Client" />
+  </ItemGroup>
+
+ 
 
 </Project>

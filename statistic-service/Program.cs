@@ -1,18 +1,28 @@
-using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using StatisticService.Common.Configs;
+using StatisticService.Common.Configs.Extensions;
 using StatisticService.Common.Exceptions;
+using StatisticService.Grpc.Identity.Statistic;
+using StatisticService.Grpc.Listing.Statistic;
+using StatisticService.Grpc.Payment.Statistic;
+using StatisticService.Modules.Admin.Services;
+using StatisticService.Modules.Identity.Services;
+using StatisticService.Modules.Listing.Services;
+using StatisticService.Modules.Payment.Services;
+using StatisticService.Modules.UserClient.Services;
 using StatisticService.Security.Extensions;
 using StatisticService.Security.Middlewares;
-using StatisticService.Modules.Admin.Services;
-using StatisticService.Grpc.Payment;
-using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.Configure<ApiBehaviorOptions>(options => options.SuppressModelStateInvalidFilter = true);
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+    options.SuppressModelStateInvalidFilter = true
+);
 
-builder.Services.AddControllers()
+builder
+    .Services.AddControllers()
     .AddJsonOptions(options =>
     {
         // serialize enum thành string, tránh trả về số
@@ -31,14 +41,43 @@ builder.Services.AddCustomJwtAuthentication(builder.Configuration);
 // 3. Setup Services
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<AdminStatisticsService>();
+builder.Services.AddScoped<ManagePostStatisticsService>();
+builder.Services.AddScoped<ManageTransactionStatisticsService>();
+builder.Services.AddScoped<ManageUserStatisticsService>();
+builder.Services.AddScoped<UserClientStatisticsService>();
+builder.Services.AddScoped<SystemOverviewService>();
 
+builder
+    .Services.AddGrpcClient<InternalPaymentStatisticService.InternalPaymentStatisticServiceClient>(
+        (sp, options) =>
+        {
+            var env = sp.GetRequiredService<IOptions<EnvConfig>>().Value;
+            options.Address = new Uri(env.GRPC_PAYMENT_URL);
+        }
+    )
+    .WithOptimizedSocketsHandler(); // 🌟 Áp dụng cấu hình tối ưu
 
-builder.Services.AddGrpcClient<InternalPaymentGrpcService.InternalPaymentGrpcServiceClient>((sp, options) =>
-{
-    var env = sp.GetRequiredService<IOptions<EnvConfig>>().Value;
-    options.Address = new Uri(env.GRPC_PAYMENT_URL);
-});
+// Đăng ký Client cho Identity
+builder
+    .Services.AddGrpcClient<InternalIdentityStatisticService.InternalIdentityStatisticServiceClient>(
+        (sp, options) =>
+        {
+            var env = sp.GetRequiredService<IOptions<EnvConfig>>().Value;
+            options.Address = new Uri(env.GRPC_IDENTITY_URL);
+        }
+    )
+    .WithOptimizedSocketsHandler();
 
+// Đăng ký Client cho Listing
+builder
+    .Services.AddGrpcClient<InternalListingStatisticService.InternalListingStatisticServiceClient>(
+        (sp, options) =>
+        {
+            var env = sp.GetRequiredService<IOptions<EnvConfig>>().Value;
+            options.Address = new Uri(env.GRPC_LISTING_URL);
+        }
+    )
+    .WithOptimizedSocketsHandler();
 
 var app = builder.Build();
 

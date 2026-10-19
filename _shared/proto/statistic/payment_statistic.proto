@@ -1,0 +1,117 @@
+syntax = "proto3";
+
+package payment.statistic;
+option java_multiple_files = true;
+option csharp_namespace = "StatisticService.Grpc.Payment.Statistic";
+
+import "google/protobuf/empty.proto";
+
+// --- Các Message Cũ (Giữ nguyên) ---
+message RevenueStatsRequest {
+    int32 year = 1;
+    int32 month = 2;
+}
+message RevenueStatsReply {
+    int64 totalRevenueYear = 1;
+    int64 totalRevenueMonth = 2;
+}
+message YearRequest {
+    int32 year = 1;
+}
+message MonthlyRevenueItem {
+    int32 month = 1;
+    int64 revenue = 2;
+}
+message MonthlyRevenueListReply {
+    repeated MonthlyRevenueItem items = 1;
+}
+
+// --- Các Message MỚI CHO TRANSACTION DASHBOARD ---
+message TransactionDashboardRequest {
+    int32 days = 1;
+}
+
+message TransactionDashboardReply {
+    int64 cashIn = 1;
+    int64 prevCashIn = 2;
+    int64 serviceUsage = 3;
+    int64 prevServiceUsage = 4;
+    int64 totalDeposits = 5;
+    int64 failedDeposits = 6;
+
+    repeated CashFlowItem cashFlowTrend = 7;
+    repeated StatusItem statusBreakdown = 8;
+    repeated TopSpenderItem topSpenders = 9;
+    repeated TransactionLogItem recentDeposits = 10;
+    repeated TransactionLogItem topSpendingLogs = 11;
+}
+
+message CashFlowItem {
+    string date = 1;
+    int64 cashIn = 2;
+    int64 cashOut = 3;
+}
+
+message StatusItem {
+    string status = 1;
+    int64 count = 2;
+}
+
+message TopSpenderItem {
+    int64 userId = 1;
+    string name = 2;
+    string email = 3;
+    string avatar = 4;
+    int64 totalSpent = 5;
+}
+
+message TransactionLogItem {
+    string txnId = 1;
+    string userName = 2;
+    string userEmail = 3;
+    string userAvatar = 4;
+    int64 amount = 5;
+    string status = 6;
+    string description = 7;
+    int64 createdAtMillis = 8;
+}
+
+message UserFinancialRequest {
+    int64 userId = 1;
+    int32 months = 2; // Số tháng lấy biểu đồ dòng tiền
+}
+
+message UserFinancialReply {
+    int64 monthlySpending = 1;
+    repeated CashFlowItem cashFlowChart = 2;
+}
+
+message SystemRevenueRequest {
+    int32 days = 1;
+}
+
+message SystemRevenueReply {
+    int64 currentRevenue = 1;
+    int64 prevRevenue = 2;
+    int64 pendingDeposits = 3;
+    repeated RevenueTrendItem revenueTrend = 4;
+    repeated TopSpenderItem topSpenders = 5;
+}
+
+message RevenueTrendItem {
+    string date = 1;
+    int64 revenue = 2;
+}
+
+service InternalPaymentStatisticService {
+    // Các hàm cũ
+    rpc GetRevenueStats (RevenueStatsRequest) returns (RevenueStatsReply);
+    rpc GetMonthlyRevenue (YearRequest) returns (MonthlyRevenueListReply);
+
+    // Hàm mới cho Dashboard
+    rpc GetTransactionDashboardStats (TransactionDashboardRequest) returns (TransactionDashboardReply);
+
+    rpc GetUserFinancialStats (UserFinancialRequest) returns (UserFinancialReply);
+
+    rpc GetSystemRevenueStats (SystemRevenueRequest) returns (SystemRevenueReply);
+}

@@ -32,6 +32,7 @@ bds360-backend
 │     └─ init
 │        └─ init.sql
 ├─ docker-compose.yml
+├─ dotnet-tools.json
 ├─ identity-service
 │  ├─ gradle
 │  │  └─ wrapper
@@ -74,7 +75,8 @@ bds360-backend
 │     │  │           │  │  └─ MapperConfiguration.java
 │     │  │           │  └─ util
 │     │  │           ├─ grpc
-│     │  │           │  └─ InternalIdentityGrpcService.txt
+│     │  │           │  ├─ InternalIdentityGrpcService.txt
+│     │  │           │  └─ InternalIdentityStatisticGrpcService.java
 │     │  │           ├─ IdentityServiceApplication.java
 │     │  │           ├─ modules
 │     │  │           │  ├─ auth
@@ -98,6 +100,11 @@ bds360-backend
 │     │  │           │  │  └─ service
 │     │  │           │  │     ├─ AuthService.java
 │     │  │           │  │     └─ ForgotPasswordService.java
+│     │  │           │  ├─ statistic
+│     │  │           │  │  ├─ repository
+│     │  │           │  │  │  └─ UserStatisticRepository.java
+│     │  │           │  │  └─ service
+│     │  │           │  │     └─ UserStatisticService.java
 │     │  │           │  └─ user
 │     │  │           │     ├─ constant
 │     │  │           │     │  ├─ Gender.java
@@ -208,6 +215,8 @@ bds360-backend
 │     │  │           │  │  ├─ EntityResolver.java
 │     │  │           │  │  └─ MapperConfiguration.java
 │     │  │           │  └─ util
+│     │  │           ├─ grpc
+│     │  │           │  └─ InternalListingStatisticGrpcService.java
 │     │  │           ├─ ListingServiceApplication.java
 │     │  │           ├─ modules
 │     │  │           │  ├─ address
@@ -278,12 +287,11 @@ bds360-backend
 │     │  │           │  │  │  ├─ Post.java
 │     │  │           │  │  │  ├─ PostViewHistory.java
 │     │  │           │  │  │  └─ SavedPost.java
-│     │  │           │  │  ├─ grpc
-│     │  │           │  │  │  └─ InternalStatisticGrpcService.java.txt
 │     │  │           │  │  ├─ mapper
 │     │  │           │  │  │  └─ PostMapper.java
 │     │  │           │  │  ├─ repository
 │     │  │           │  │  │  ├─ ImageRepository.java
+│     │  │           │  │  │  ├─ PostAnalyticsRepository.java
 │     │  │           │  │  │  ├─ PostRepository.java
 │     │  │           │  │  │  ├─ PostViewHistoryRepository.java
 │     │  │           │  │  │  └─ SavedPostRepository.java
@@ -294,6 +302,15 @@ bds360-backend
 │     │  │           │  │  └─ specification
 │     │  │           │  │     ├─ ForYouSpecification.java
 │     │  │           │  │     └─ PostSpecification.java
+│     │  │           │  ├─ statistic
+│     │  │           │  │  ├─ dto
+│     │  │           │  │  │  └─ response
+│     │  │           │  │  │     ├─ ManagePostStatisticsResponse.java
+│     │  │           │  │  │     └─ VipDistribution.java
+│     │  │           │  │  ├─ repository
+│     │  │           │  │  │  └─ PostStatisticRepository.java
+│     │  │           │  │  └─ service
+│     │  │           │  │     └─ ManagePostStatisticsService.java
 │     │  │           │  └─ vip
 │     │  │           │     ├─ entity
 │     │  │           │     │  └─ Vip.java
@@ -497,7 +514,15 @@ bds360-backend
 │     │  │           │  │  ├─ EntityResolver.java
 │     │  │           │  │  └─ MapperConfiguration.java
 │     │  │           │  └─ util
+│     │  │           ├─ grpc
+│     │  │           │  ├─ InternalPaymentGrpcService.java.txt
+│     │  │           │  └─ InternalPaymentStatisticGrpcService.java
 │     │  │           ├─ modules
+│     │  │           │  ├─ statistic
+│     │  │           │  │  ├─ repository
+│     │  │           │  │  │  └─ TransactionStatisticRepository.java
+│     │  │           │  │  └─ service
+│     │  │           │  │     └─ ManageTransactionStatisticsService.java
 │     │  │           │  └─ transaction
 │     │  │           │     ├─ config
 │     │  │           │     │  └─ VnPayProperties.java
@@ -562,30 +587,88 @@ bds360-backend
 │  ├─ appsettings.Development.json
 │  ├─ appsettings.json
 │  ├─ Common
+│  │  ├─ Configs
+│  │  │  ├─ EnvConfig.cs
+│  │  │  └─ Extensions
+│  │  │     ├─ AppConfigExtension.cs
+│  │  │     └─ GrpcClientExtension.cs
 │  │  ├─ Constants
+│  │  │  └─ Enums.cs
 │  │  ├─ Exceptions
+│  │  │  ├─ AppException.cs
+│  │  │  ├─ ErrorCode.cs
+│  │  │  └─ GlobalExceptionHandler.cs
 │  │  └─ Responses
-│  ├─ Controllers
-│  ├─ DTOs
-│  │  ├─ Request
-│  │  └─ Response
+│  │     └─ ApiResponse.cs
+│  ├─ Modules
+│  │  ├─ Admin
+│  │  │  ├─ Controllers
+│  │  │  │  ├─ AdminStatisticsController.cs
+│  │  │  │  └─ SystemOverviewController.cs
+│  │  │  ├─ DTOs
+│  │  │  │  ├─ AdminStatisticsResponse.cs
+│  │  │  │  ├─ MonthlyRevenueResponse.cs
+│  │  │  │  └─ SystemOverviewResponse.cs
+│  │  │  └─ Services
+│  │  │     ├─ AdminStatisticsService.cs
+│  │  │     └─ SystemOverviewService.cs
+│  │  ├─ Identity
+│  │  │  ├─ Controllers
+│  │  │  │  └─ ManageUserStatisticsController.cs
+│  │  │  ├─ DTOs
+│  │  │  │  └─ ManageUserStatisticsResponse.cs
+│  │  │  └─ Services
+│  │  │     └─ ManageUserStatisticsService.cs
+│  │  ├─ Listing
+│  │  │  ├─ Controllers
+│  │  │  │  └─ ManagePostStatisticsController.cs
+│  │  │  ├─ DTOs
+│  │  │  │  └─ ManagePostStatisticsResponse.cs
+│  │  │  └─ Services
+│  │  │     └─ ManagePostStatisticsService.cs
+│  │  ├─ Payment
+│  │  │  ├─ Controllers
+│  │  │  │  └─ ManageTransactionStatisticsController.cs
+│  │  │  ├─ DTOs
+│  │  │  │  └─ ManageTransactionStatisticsResponse.cs
+│  │  │  └─ Services
+│  │  │     └─ ManageTransactionStatisticsService.cs
+│  │  └─ UserClient
+│  │     ├─ Controllers
+│  │     │  └─ UserClientStatisticsController.cs
+│  │     ├─ DTOs
+│  │     │  └─ UserDashboardResponse.cs
+│  │     └─ Services
+│  │        └─ UserClientStatisticsService.cs
 │  ├─ Program.cs
 │  ├─ Properties
 │  │  └─ launchSettings.json
-│  ├─ Protos
-│  ├─ Services
-│  ├─ statistic-service.csproj
-│  └─ _shared
+│  ├─ Security
+│  │  ├─ Attributes
+│  │  │  ├─ CurrentUserAttribute.cs
+│  │  │  ├─ IsAdminAttribute.cs
+│  │  │  ├─ IsAdminOrModeratorAttribute.cs
+│  │  │  └─ RequireLoginAttribute.cs
+│  │  ├─ DTOs
+│  │  │  └─ UserContext.cs
+│  │  ├─ Extensions
+│  │  │  └─ JwtExtension.cs
+│  │  ├─ Middlewares
+│  │  │  └─ CustomJwtMiddleware.cs
+│  │  └─ Resolvers
+│  │     └─ CurrentUserModelBinder.cs
+│  └─ statistic-service.csproj
 └─ _shared
    ├─ data
    │  └─ users.csv
    └─ proto
-      ├─ bds360_internal.proto
-      ├─ common.proto.txt
-      ├─ identity.proto
-      ├─ listing.proto
-      ├─ notification.proto
-      ├─ payment.proto
-      └─ statistic.proto
+      ├─ identity.proto.txt
+      ├─ listing.proto.txt
+      ├─ notification.proto.txt
+      ├─ payment.proto.txt
+      └─ statistic
+         ├─ identity_statistic.proto
+         ├─ listing_statistic.proto
+         └─ payment_statistic.proto
 
 ```

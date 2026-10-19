@@ -38,13 +38,4 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
         @Query("SELECT SUM(u.balance) FROM User u")
         Long sumTotalSystemBalance();
 
-        // Lấy số lượng người dùng mới theo từng ngày
-        // @Query(value = "SELECT CAST(DATE(created_at) AS CHAR) as date, COUNT(id) as
-        // value " +
-        // "FROM users " +
-        // "WHERE created_at BETWEEN :start AND :end " +
-        // "GROUP BY CAST(DATE(created_at) AS CHAR) " +
-        // "ORDER BY CAST(DATE(created_at) AS CHAR) ASC", nativeQuery = true)
-        // List<DailyStatProjection> getDailyNewUsers(@Param("start") Instant start,
-        // @Param("end") Instant end);
 }

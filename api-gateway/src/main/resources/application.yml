@@ -41,4 +41,4 @@ spring:
           - id: statistic-service
             uri: http://statistic-service:5001
             predicates:
-              - Path=/api/v1/statistics/**
+              - Path=/api/v1/statistics/**,/api/v1/*/statistics/**
