@@ -3,6 +3,7 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
 import { Module } from '@nestjs/common';
 import { join } from 'path';
 import { envConfig } from '../../config/env.config';
+import { EmailConsumer } from './email.consumer';
 import { EmailController } from './email.controller';
 import { EmailService } from './email.service';
 
@@ -32,7 +33,7 @@ import { EmailService } from './email.service';
         }),
     ],
     controllers: [EmailController],
-    providers: [EmailService],
+    providers: [EmailService, EmailConsumer],
     exports: [EmailService], // Export để các module khác (Identity, Payment) có thể xài
 })
 export class EmailModule { }

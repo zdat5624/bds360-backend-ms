@@ -7,9 +7,11 @@ import {
 
 export enum NotificationType {
   POST = 'POST',
-  SYSTEM = 'SYSTEM',
-  PAYMENT = 'PAYMENT',
+  TRANSACTION = 'TRANSACTION',
+  SYSTEM_ALERT = 'SYSTEM_ALERT',
 }
+
+
 
 @Entity('notifications')
 export class Notification {

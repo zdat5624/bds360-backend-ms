@@ -1,0 +1,22 @@
+// --- File: _shared/proto/event/user_event.proto ---
+syntax = "proto3";
+
+package event;
+
+option java_multiple_files = true;
+
+
+// Event bắn ra khi User cập nhật thông tin cá nhân (Tên, Avatar, Số điện thoại)
+message UserProfileUpdatedEvent {
+    int64 userId = 1;
+    string name = 2;
+    string email = 3; // Giữ email để đối chiếu nếu cần, dù email không đổi
+    string avatar = 4;
+    string phone = 5;
+}
+
+// Event bắn ra khi User bị Xóa (Soft Delete)
+message UserDeletedEvent {
+    int64 userId = 1;
+    string email = 2; // Gửi kèm email cũ
+}

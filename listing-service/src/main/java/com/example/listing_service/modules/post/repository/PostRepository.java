@@ -60,4 +60,13 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
         // List<Post> findByUser(User user);
         //
         // List<Post> findByUserOrderByViewDesc(User user, Pageable pageable);
+
+        @Modifying
+        @Query("UPDATE Post p SET p.authorName = :name, p.authorAvatar = :avatar, p.authorPhone = :phone WHERE p.userId = :userId")
+        void updateAuthorInfo(@Param("userId") Long userId, @Param("name") String name, @Param("avatar") String avatar,
+                        @Param("phone") String phone);
+
+        @Modifying
+        @Query("UPDATE Post p SET p.isHidden = true, p.deletedByUser = true WHERE p.userId = :userId")
+        void hideAllPostsOfDeletedUser(@Param("userId") Long userId);
 }

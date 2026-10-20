@@ -53,7 +53,6 @@ bds360-backend
 │     │  │           │  │  └─ ApiGlobalResponse.java
 │     │  │           │  ├─ config
 │     │  │           │  │  ├─ AppProperties.java
-│     │  │           │  │  ├─ CorsConfig.java.txt
 │     │  │           │  │  └─ OpenApiConfig.java
 │     │  │           │  ├─ constant
 │     │  │           │  │  ├─ ListingType.java
@@ -78,6 +77,12 @@ bds360-backend
 │     │  │           │  ├─ InternalIdentityGrpcService.java
 │     │  │           │  └─ InternalIdentityStatisticGrpcService.java
 │     │  │           ├─ IdentityServiceApplication.java
+│     │  │           ├─ messaging
+│     │  │           │  ├─ config
+│     │  │           │  │  └─ RabbitMQConfig.java
+│     │  │           │  └─ publisher
+│     │  │           │     ├─ NotificationEventPublisher.java
+│     │  │           │     └─ UserEventPublisher.java
 │     │  │           ├─ modules
 │     │  │           │  ├─ auth
 │     │  │           │  │  ├─ controller
@@ -110,10 +115,10 @@ bds360-backend
 │     │  │           │  │     └─ UserStatisticService.java
 │     │  │           │  └─ user
 │     │  │           │     ├─ constant
+│     │  │           │     │  ├─ AccountStatus.java
 │     │  │           │     │  ├─ Gender.java
 │     │  │           │     │  └─ VerificationStatus.java
 │     │  │           │     ├─ controller
-│     │  │           │     │  ├─ TestController.java
 │     │  │           │     │  ├─ UserController.java
 │     │  │           │     │  └─ VerificationController.java
 │     │  │           │     ├─ dto
@@ -138,6 +143,7 @@ bds360-backend
 │     │  │           │     │  ├─ UserRepository.java
 │     │  │           │     │  └─ VerificationSubmissionRepository.java
 │     │  │           │     ├─ service
+│     │  │           │     │  ├─ UserGrpcCommandService.java
 │     │  │           │     │  ├─ UserGrpcQueryService.java
 │     │  │           │     │  ├─ UserService.java
 │     │  │           │     │  └─ VerificationService.java
@@ -166,7 +172,7 @@ bds360-backend
 │     │  │              └─ service
 │     │  │                 └─ SecurityService.java
 │     │  └─ resources
-│     │     ├─ application.yaml
+│     │     ├─ application.yml
 │     │     ├─ data
 │     │     │  └─ users.csv
 │     │     ├─ static
@@ -222,6 +228,13 @@ bds360-backend
 │     │  │           ├─ grpc
 │     │  │           │  └─ InternalListingStatisticGrpcService.java
 │     │  │           ├─ ListingServiceApplication.java
+│     │  │           ├─ messaging
+│     │  │           │  ├─ config
+│     │  │           │  │  └─ RabbitMQConfig.java
+│     │  │           │  ├─ consumer
+│     │  │           │  │  └─ UserEventConsumer.java
+│     │  │           │  └─ publisher
+│     │  │           │     └─ NotificationEventPublisher.java
 │     │  │           ├─ modules
 │     │  │           │  ├─ address
 │     │  │           │  │  ├─ config
@@ -252,10 +265,23 @@ bds360-backend
 │     │  │           │  │     ├─ AddressService.java
 │     │  │           │  │     └─ MapboxGeocodeService.java
 │     │  │           │  ├─ category
+│     │  │           │  │  ├─ controller
+│     │  │           │  │  │  └─ CategoryController.java
+│     │  │           │  │  ├─ dto
+│     │  │           │  │  │  ├─ request
+│     │  │           │  │  │  │  ├─ CategoryCreateRequest.java
+│     │  │           │  │  │  │  ├─ CategoryFilterRequest.java
+│     │  │           │  │  │  │  └─ CategoryUpdateRequest.java
+│     │  │           │  │  │  └─ response
+│     │  │           │  │  │     └─ CategoryResponse.java
 │     │  │           │  │  ├─ entity
 │     │  │           │  │  │  └─ Category.java
-│     │  │           │  │  └─ repository
-│     │  │           │  │     └─ CategoryRepository.java
+│     │  │           │  │  ├─ mapper
+│     │  │           │  │  │  └─ CategoryMapper.java
+│     │  │           │  │  ├─ repository
+│     │  │           │  │  │  └─ CategoryRepository.java
+│     │  │           │  │  └─ service
+│     │  │           │  │     └─ CategoryService.java
 │     │  │           │  ├─ post
 │     │  │           │  │  ├─ constant
 │     │  │           │  │  │  ├─ CompassDirection.java
@@ -302,7 +328,8 @@ bds360-backend
 │     │  │           │  │  ├─ service
 │     │  │           │  │  │  ├─ PostAnalyticsService.java
 │     │  │           │  │  │  ├─ PostService.java
-│     │  │           │  │  │  └─ SavedPostService.java
+│     │  │           │  │  │  ├─ SavedPostService.java
+│     │  │           │  │  │  └─ UserSyncService.java
 │     │  │           │  │  └─ specification
 │     │  │           │  │     ├─ ForYouSpecification.java
 │     │  │           │  │     └─ PostSpecification.java
@@ -316,10 +343,21 @@ bds360-backend
 │     │  │           │  │  └─ service
 │     │  │           │  │     └─ ManagePostStatisticsService.java
 │     │  │           │  └─ vip
+│     │  │           │     ├─ controller
+│     │  │           │     │  └─ VipController.java
+│     │  │           │     ├─ dto
+│     │  │           │     │  ├─ request
+│     │  │           │     │  │  └─ UpdateVipPriceRequest.java
+│     │  │           │     │  └─ response
+│     │  │           │     │     └─ VipResponse.java
 │     │  │           │     ├─ entity
 │     │  │           │     │  └─ Vip.java
-│     │  │           │     └─ repository
-│     │  │           │        └─ VipRepository.java
+│     │  │           │     ├─ mapper
+│     │  │           │     │  └─ VipMapper.java
+│     │  │           │     ├─ repository
+│     │  │           │     │  └─ VipRepository.java
+│     │  │           │     └─ service
+│     │  │           │        └─ VipService.java
 │     │  │           └─ security
 │     │  │              ├─ annotation
 │     │  │              │  ├─ CurrentUser.java
@@ -433,10 +471,16 @@ bds360-backend
 │  │  │  └─ pipe
 │  │  │     └─ custom-validation.pipe.ts
 │  │  ├─ config
-│  │  │  └─ env.config.ts
+│  │  │  ├─ env.config.ts
+│  │  │  ├─ grpc.config.ts
+│  │  │  └─ rabbitmq.config.ts
+│  │  ├─ generated
+│  │  │  ├─ proto.d.ts
+│  │  │  └─ proto.js
 │  │  ├─ main.ts
 │  │  ├─ modules
 │  │  │  ├─ email
+│  │  │  │  ├─ email.consumer.ts
 │  │  │  │  ├─ email.controller.ts
 │  │  │  │  ├─ email.module.ts
 │  │  │  │  ├─ email.service.ts
@@ -454,6 +498,7 @@ bds360-backend
 │  │  │     │     └─ notification.response.ts
 │  │  │     ├─ entity
 │  │  │     │  └─ notification.entity.ts
+│  │  │     ├─ notification.consumer.ts
 │  │  │     ├─ notification.controller.ts
 │  │  │     ├─ notification.gateway.ts
 │  │  │     ├─ notification.module.ts
@@ -519,8 +564,17 @@ bds360-backend
 │     │  │           │  │  └─ MapperConfiguration.java
 │     │  │           │  └─ util
 │     │  │           ├─ grpc
+│     │  │           │  ├─ client
+│     │  │           │  │  └─ IdentityGrpcClient.java
 │     │  │           │  ├─ InternalPaymentGrpcService.java.txt
 │     │  │           │  └─ InternalPaymentStatisticGrpcService.java
+│     │  │           ├─ messaging
+│     │  │           │  ├─ config
+│     │  │           │  │  └─ RabbitMQConfig.java
+│     │  │           │  ├─ consumer
+│     │  │           │  │  └─ PaymentEventConsumer.java
+│     │  │           │  └─ publisher
+│     │  │           │     └─ EmailEventPublisher.java
 │     │  │           ├─ modules
 │     │  │           │  ├─ statistic
 │     │  │           │  │  ├─ dto
@@ -669,6 +723,9 @@ bds360-backend
    ├─ data
    │  └─ users.csv
    └─ proto
+      ├─ event
+      │  ├─ notification_event.proto
+      │  └─ user_event.proto
       ├─ identity.proto
       ├─ listing.proto.txt
       ├─ notification.proto.txt

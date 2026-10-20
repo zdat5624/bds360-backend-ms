@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.identity_service.common.exception.AppException;
 import com.example.identity_service.common.exception.ErrorCode;
+import com.example.identity_service.messaging.publisher.NotificationEventPublisher;
 import com.example.identity_service.modules.auth.entity.PasswordResetToken;
 import com.example.identity_service.modules.auth.repository.PasswordResetTokenRepository;
 import com.example.identity_service.modules.user.entity.User;
@@ -15,17 +16,16 @@ import com.example.identity_service.modules.user.repository.UserRepository;
 import com.example.identity_service.modules.user.service.UserService;
 
 import lombok.RequiredArgsConstructor;
-// import vn.bds360.backend.modules.email.service.EmailService;
 
 @Service
 @RequiredArgsConstructor
 public class ForgotPasswordService {
 
     private final UserService userService;
-    // private final EmailService emailService;
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
+    private final NotificationEventPublisher notificationEventPublisher; // <-- Inject Publisher
 
     public void requestPasswordReset(String email) {
         User user = userRepository.findByEmail(email)
@@ -38,9 +38,11 @@ public class ForgotPasswordService {
         token.setUser(user);
         tokenRepository.save(token);
 
-        // emailService.sendForgotPasswordEmail(email, user.getName(), resetCode);
+        // Bắn event thay vì gọi trực tiếp EmailService
+        notificationEventPublisher.publishForgotPasswordEmail(email, user.getName(), resetCode);
     }
 
+    // Các hàm resetPassword và generateResetCode giữ nguyên...
     public void resetPassword(String email, String code, String newPassword) {
         PasswordResetToken token = tokenRepository.findByTokenAndUserEmail(code, email)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_OTP_CODE));

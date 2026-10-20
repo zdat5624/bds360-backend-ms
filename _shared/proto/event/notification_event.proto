@@ -1,0 +1,27 @@
+syntax = "proto3";
+package event;
+
+// Tùy chọn cấu hình cho Java sinh code
+option java_package = "event";
+option java_multiple_files = true;
+
+message DepositSuccessEvent {
+    string to = 1;
+    string username = 2;
+    double amount = 3;
+    string transactionTime = 4;
+}
+
+
+message ForgotPasswordEvent {
+    string to = 1;
+    string username = 2;
+    string resetCode = 3;
+}
+
+message PostNotificationEvent {
+    int64 userId = 1;
+    string title = 2;
+    string message = 3;
+    string notificationType = 4;
+}

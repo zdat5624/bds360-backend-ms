@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -16,6 +17,8 @@ import org.springframework.stereotype.Service;
 
 import com.example.payment_service.common.exception.AppException;
 import com.example.payment_service.common.exception.ErrorCode;
+import com.example.payment_service.grpc.client.IdentityGrpcClient;
+import com.example.payment_service.messaging.publisher.EmailEventPublisher;
 import com.example.payment_service.modules.transaction.config.VnPayProperties;
 import com.example.payment_service.modules.transaction.constant.TransactionStatus;
 import com.example.payment_service.modules.transaction.constant.TransactionType;
@@ -25,11 +28,12 @@ import com.example.payment_service.modules.transaction.repository.TransactionRep
 import com.example.payment_service.modules.transaction.util.VnPayUtil;
 import com.example.payment_service.security.dto.UserContext;
 
+import identity.UpdateBalanceResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j // Khuyến nghị dùng Log thay vì System.out
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VNPAYService {
@@ -39,6 +43,9 @@ public class VNPAYService {
     // private final EmailService emailService;
     // private final NotificationService notificationService;
     private final VnPayProperties vnPayProperties;
+    private final EmailEventPublisher emailEventPublisher;
+
+    private final IdentityGrpcClient identityGrpcClient;
 
     // ==========================================
     // 1. TẠO LINK THANH TOÁN
@@ -144,6 +151,16 @@ public class VNPAYService {
         Transaction transaction = transactionRepository.findByTxnId(txnId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRANSACTION_NOT_FOUND));
 
+        // 🌟 CHỐNG F5 LẶP CỘNG TIỀN (IDEMPOTENCY CHECK)
+        if (transaction.getStatus() == TransactionStatus.SUCCESS) {
+            log.info("Giao dịch {} đã được xử lý thành công trước đó. Bỏ qua cộng tiền trùng lặp.", txnId);
+            return 1;
+        }
+        if (transaction.getStatus() == TransactionStatus.FAILED) {
+            log.info("Giao dịch {} đã thất bại trước đó.", txnId);
+            return 0;
+        }
+
         // Lấy thông điệp lỗi thông qua hàm Helper
         String description = getTransactionDescription(transactionStatus, txnId);
         boolean isSuccess = "00".equals(transactionStatus);
@@ -168,48 +185,43 @@ public class VNPAYService {
     // ==========================================
 
     private void processSuccessfulTransaction(Transaction transaction, String description) {
-        // User user = transaction.getUser();
-        // user.setBalance(user.getBalance() + transaction.getAmount());
-        // userRepository.save(user);
+        log.info("Giao dịch VNPAY thành công, tiến hành gọi gRPC cộng tiền: UserId = {}, Amount = {}",
+                transaction.getUserId(), transaction.getAmount());
 
-        // // Tạo thông báo in-app
-        // Notification notification = new Notification();
-        // notification.setUser(user);
-        // notification.setRead(false);
-        // notification.setType(NotificationType.TRANSACTION);
-        // notification.setMessage(description + ", tài khoản của bạn được cộng " +
-        // transaction.getAmount() + " VNĐ");
-        // notificationService.createNotification(notification.getUser().getId(),
-        // notification.getMessage(),
-        // notification.getType());
+        try {
+            // UpdateBalanceRequest request = UpdateBalanceRequest.newBuilder()
+            // .setUserId(transaction.getUserId())
+            // .setAmount(transaction.getAmount())
+            // .build();
 
-        // // Gửi Email
-        // String transactionTime =
-        // LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy
-        // HH:mm:ss"));
-        // emailService.sendDepositSuccessEmail(user.getEmail(), user.getName(),
-        // transaction.getAmount(), transactionTime);
-        log.info("Giao dịch thành công: UserId = {}, Amount = {}", transaction.getUserId(), transaction.getAmount());
+            UpdateBalanceResponse response = identityGrpcClient.updateBalance(transaction.getUserId(),
+                    transaction.getAmount());
+
+            if (response.getSuccess()) {
+                log.info("gRPC Success: Đã cộng tiền cho UserId {}. Số dư mới: {}",
+                        transaction.getUserId(), response.getNewBalance());
+
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+                String currentTime = sdf.format(new Date());
+
+                emailEventPublisher.publishDepositSuccess(
+                        transaction.getUserEmail(),
+                        transaction.getUserName(),
+                        transaction.getAmount(),
+                        currentTime);
+
+            } else {
+                log.error("gRPC Error: Identity Service từ chối cộng tiền: {}", response.getMessage());
+                throw new RuntimeException("Cộng tiền thất bại: " + response.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Lỗi kết nối gRPC sang Identity Service khi cộng tiền cho UserId: {}", transaction.getUserId(),
+                    e);
+            throw e; // Ném lỗi để rollback Transaction Database nếu cần
+        }
     }
 
     private void processFailedTransaction(Transaction transaction, String description, String statusCode) {
-        // Notification notification = new Notification();
-        // notification.setUser(transaction.getUser());
-        // notification.setRead(false);
-        // notification.setType(NotificationType.TRANSACTION);
-
-        // if ("02".equals(statusCode)) {
-        // notification.setMessage("Giao dịch nạp tiền qua VNPAY (" +
-        // transaction.getTxnId() + ") của bạn đã bị hủy.");
-        // } else {
-        // notification.setMessage("Giao dịch nạp tiền qua VNPAY (" +
-        // transaction.getTxnId() + ") không thể hoàn tất: "
-        // + description + ". Vui lòng thử lại.");
-        // }
-        // notificationService.createNotification(notification.getUser().getId(),
-        // notification.getMessage(),
-        // notification.getType());
-
         log.warn("Giao dịch thất bại: UserId = {}, Reason = {}", transaction.getUserId(), description);
     }
 

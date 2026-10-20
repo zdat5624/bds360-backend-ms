@@ -17,6 +17,9 @@ import com.example.listing_service.common.constant.Role;
 import com.example.listing_service.common.dto.response.PageResponse;
 import com.example.listing_service.common.exception.AppException;
 import com.example.listing_service.common.exception.ErrorCode;
+import com.example.listing_service.grpc.client.IdentityGrpcClient;
+import com.example.listing_service.grpc.client.PaymentGrpcClient;
+import com.example.listing_service.messaging.publisher.NotificationEventPublisher;
 import com.example.listing_service.modules.address.entity.District;
 import com.example.listing_service.modules.address.entity.Province;
 import com.example.listing_service.modules.address.entity.Ward;
@@ -69,9 +72,11 @@ public class PostService {
     private final ProvinceRepository provinceRepository;
     private final DistrictRepository districtRepository;
     private final WardRepository wardRepository;
-
+    private final NotificationEventPublisher notificationEventPublisher;
     private final PostViewHistoryRepository postViewHistoryRepository;
     private final EntityManager entityManager;
+    private final IdentityGrpcClient identityGrpcClient;
+    private final PaymentGrpcClient paymentGrpcClient;
 
     @Transactional
     public PostResponse createPost(UserContext userContext, PostCreateRequest request) {
@@ -86,14 +91,18 @@ public class PostService {
             isVip = vip.getVipLevel() > 0;
         }
 
-        // long totalCost = request.getNumberOfDays() * costPerDay;
-        // if (user.getBalance() < totalCost) {
-        // throw new AppException(ErrorCode.BALANCE_NOT_ENOUGH);
-        // }
+        long totalCost = request.getNumberOfDays() * costPerDay;
 
-        // Trừ tiền
-        // user.setBalance(user.getBalance() - totalCost);
-        // userRepository.save(user);
+        // 2. KIỂM TRA SỐ DƯ TRƯỚC (NẾU CÓ PHÁT SINH CHI PHÍ)
+        if (totalCost > 0) {
+            long currentBalance = identityGrpcClient.getUserBalance(userContext.getId());
+            if (currentBalance < totalCost) {
+                throw new AppException(ErrorCode.BALANCE_NOT_ENOUGH);
+            }
+
+            // 3. ĐỦ TIỀN THÌ MỚI GỌI TRỪ TIỀN
+            identityGrpcClient.deductBalance(userContext.getId(), totalCost);
+        }
 
         // 2. Map DTO -> Entity
         Post post = postMapper.toEntity(request);
@@ -135,14 +144,12 @@ public class PostService {
         savedPost.setImages(images);
 
         // 7. Lưu Transaction
-        // Transaction transaction = new Transaction();
-        // transaction.setAmount(-totalCost);
-        // transaction.setDescription("Thanh toán phí đăng tin mã " +
-        // savedPost.getId());
-        // transaction.setStatus(TransactionStatus.SUCCESS);
-        // transaction.setUser(user);
-        // transaction.setType(TransactionType.PAYMENT);
-        // transactionRepository.save(transaction);
+        if (totalCost > 0) {
+            paymentGrpcClient.logPaymentTransaction(
+                    userContext,
+                    totalCost,
+                    "Thanh toán phí đăng tin mã #" + savedPost.getId());
+        }
 
         return postMapper.toResponse(savedPost);
     }
@@ -280,11 +287,12 @@ public class PostService {
         // Nếu là lệnh xóa từ hệ thống (qua Controller /manage)
         if (isSystemDelete) {
             // Có thể chặn Mod không được xóa vĩnh viễn (Hard delete) mà chỉ Admin mới được,
-            // hoặc cho phép cả hai. Dưới đây là cho phép cả hai.
-            // notificationService.createNotification(post.getUser().getId(),
-            // "Tin đăng mã " + post.getId() + " đã bị gỡ bỏ bởi quản trị viên/kiểm duyệt
-            // viên.",
-            // NotificationType.POST);
+            notificationEventPublisher.publishPostNotification(
+                    post.getUserId(),
+                    "Bài đăng đã bị gỡ bỏ",
+                    "Tin đăng mã #" + post.getId() + " đã bị gỡ bỏ bởi quản trị viên/kiểm duyệt viên.",
+                    "POST");
+
             postRepository.delete(post); // Hard delete
         } else {
             // Lệnh xóa từ người dùng (Soft delete)
@@ -301,10 +309,13 @@ public class PostService {
         post.setStatus(status);
         postRepository.save(post);
 
-        // if (sendNotification && message != null) {
-        // notificationService.createNotification(post.getUser().getId(), message,
-        // NotificationType.SYSTEM_ALERT);
-        // }
+        if (sendNotification && message != null) {
+            notificationEventPublisher.publishPostNotification(
+                    post.getUserId(),
+                    "Cập nhật trạng thái tin đăng",
+                    message,
+                    "SYSTEM_ALERT");
+        }
         return postMapper.toResponse(post);
     }
 
@@ -719,14 +730,16 @@ public class PostService {
             isVip = post.getVip().getVipLevel() > 0;
         }
 
-        // long totalCost = request.getNumberOfDays() * costPerDay;
+        long totalCost = request.getNumberOfDays() * costPerDay;
 
-        // if (user.getBalance() < totalCost) {
-        // throw new AppException(ErrorCode.BALANCE_NOT_ENOUGH);
-        // }
-
-        // user.setBalance(user.getBalance() - totalCost);
-        // userRepository.save(user);
+        // 2. Kiểm tra số dư và trừ tiền (Tương tự Create)
+        if (totalCost > 0) {
+            long currentBalance = identityGrpcClient.getUserBalance(userContext.getId());
+            if (currentBalance < totalCost) {
+                throw new AppException(ErrorCode.BALANCE_NOT_ENOUGH);
+            }
+            identityGrpcClient.deductBalance(userContext.getId(), totalCost);
+        }
 
         post.setVip(targetVip);
         post.setNotifyOnView(isVip);
@@ -746,15 +759,12 @@ public class PostService {
 
         Post savedPost = postRepository.save(post);
 
-        // Transaction transaction = new Transaction();
-        // transaction.setAmount(-totalCost);
-        // transaction
-        // .setDescription("Gia hạn tin #" + savedPost.getId() + " thêm " +
-        // request.getNumberOfDays() + " ngày");
-        // transaction.setStatus(TransactionStatus.SUCCESS);
-        // transaction.setUser(user);
-        // transaction.setType(TransactionType.PAYMENT);
-        // transactionRepository.save(transaction);
+        if (totalCost > 0) {
+            paymentGrpcClient.logPaymentTransaction(
+                    userContext,
+                    totalCost,
+                    "Gia hạn tin mã #" + savedPost.getId() + " thêm " + request.getNumberOfDays() + " ngày");
+        }
 
         return postMapper.toResponse(savedPost);
     }
@@ -780,25 +790,29 @@ public class PostService {
             throw new AppException(ErrorCode.BUMP_COOLDOWN_ACTIVE); // Cần định nghĩa lỗi này trong ErrorCode
         }
 
-        long bumpFee = 10000L; // Có thể chuyển thành cấu hình trong Database
-        // if (user.getBalance() < bumpFee) {
-        // throw new AppException(ErrorCode.BALANCE_NOT_ENOUGH);
-        // }
+        // 1. Lấy phí đẩy tin (Có thể lấy từ bảng cấu hình, ví dụ ở đây là 2000đ)
+        long bumpCost = 10000;
 
-        // user.setBalance(user.getBalance() - bumpFee);
-        // userRepository.save(user);
+        // 2. Kiểm tra số dư và trừ tiền thông qua IdentityGrpcClient
+        if (bumpCost > 0) {
+            long currentBalance = identityGrpcClient.getUserBalance(userContext.getId());
+            if (currentBalance < bumpCost) {
+                throw new AppException(ErrorCode.BALANCE_NOT_ENOUGH);
+            }
+            identityGrpcClient.deductBalance(userContext.getId(), bumpCost);
+        }
 
         // Cập nhật thời điểm đẩy tin
         post.setPushedAt(Instant.now());
         Post savedPost = postRepository.save(post);
 
-        // Transaction transaction = new Transaction();
-        // transaction.setAmount(-bumpFee);
-        // transaction.setDescription("Phí đẩy tin #" + savedPost.getId() + " lên top");
-        // transaction.setStatus(TransactionStatus.SUCCESS);
-        // transaction.setUser(user);
-        // transaction.setType(TransactionType.PAYMENT);
-        // transactionRepository.save(transaction);
+        // 3. LƯU LỊCH SỬ TRANSACTION QUA GRPC PAYMENT
+        if (bumpCost > 0) {
+            paymentGrpcClient.logPaymentTransaction(
+                    userContext,
+                    bumpCost,
+                    "Phí đẩy tin mã #" + savedPost.getId() + " lên top");
+        }
 
         return postMapper.toResponse(savedPost);
     }

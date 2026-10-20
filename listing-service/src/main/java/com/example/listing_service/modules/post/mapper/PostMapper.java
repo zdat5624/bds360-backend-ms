@@ -15,7 +15,6 @@ import com.example.listing_service.modules.post.dto.response.SavedPostResponse;
 import com.example.listing_service.modules.post.entity.Post;
 import com.example.listing_service.modules.post.entity.SavedPost;
 
-// Thêm uses = EntityResolver.class vào đây
 @Mapper(config = MapperConfiguration.class, uses = { EntityResolver.class })
 public interface PostMapper {
 
@@ -27,12 +26,19 @@ public interface PostMapper {
     @Mapping(target = "images", ignore = true)
     Post toEntity(PostCreateRequest request);
 
+    // 🌟 SỬA TẠI ĐÂY: Ánh xạ các trường phẳng trong Entity Post vào Sub-DTO 'user'
+    // của PostResponse
     @Mapping(target = "provinceCode", source = "province.code")
     @Mapping(target = "provinceName", source = "province.name")
     @Mapping(target = "districtCode", source = "district.code")
     @Mapping(target = "districtName", source = "district.name")
     @Mapping(target = "wardCode", source = "ward.code")
     @Mapping(target = "wardName", source = "ward.name")
+    @Mapping(target = "user.id", source = "userId")
+    @Mapping(target = "user.name", source = "authorName")
+    @Mapping(target = "user.email", source = "authorEmail")
+    @Mapping(target = "user.phone", source = "authorPhone")
+    @Mapping(target = "user.avatar", source = "authorAvatar")
     PostResponse toResponse(Post post);
 
     @Mapping(target = "id", ignore = true)
@@ -53,5 +59,10 @@ public interface PostMapper {
     @Mapping(target = "provinceCode", source = "post.province.code")
     @Mapping(target = "districtCode", source = "post.district.code")
     @Mapping(target = "wardCode", source = "post.ward.code")
+    @Mapping(target = "user.id", source = "post.userId")
+    @Mapping(target = "user.name", source = "post.authorName")
+    @Mapping(target = "user.email", source = "post.authorEmail")
+    @Mapping(target = "user.phone", source = "post.authorPhone")
+    @Mapping(target = "user.avatar", source = "post.authorAvatar")
     SavedPostResponse toSavedPostResponse(SavedPost savedPost);
 }

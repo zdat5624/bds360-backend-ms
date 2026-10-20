@@ -20,10 +20,25 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 3s
+          max-retries: 3
 
 grpc:
   server:
     port: 9094
+  client:
+    identity-service:
+      address: ${GRPC_IDENTITY_URL:dns:///identity-service:9091}
+      negotiation-type: plaintext
 
 api:
   jwt:

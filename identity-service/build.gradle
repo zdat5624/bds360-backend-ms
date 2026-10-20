@@ -20,6 +20,9 @@ repositories {
 }
 
 dependencies {
+	// RabitMQ
+	implementation 'org.springframework.boot:spring-boot-starter-amqp'
+
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 	// security
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
@@ -51,7 +54,8 @@ dependencies {
 	testAnnotationProcessor 'org.projectlombok:lombok'
 
 
-	implementation 'net.devh:grpc-server-spring-boot-starter:3.1.0.RELEASE' // Dùng bản tương thích Spring Boot 3.x
+	implementation 'net.devh:grpc-server-spring-boot-starter:3.1.0.RELEASE'
+	implementation 'net.devh:grpc-client-spring-boot-starter:3.1.0.RELEASE'
 
     // Thư viện core gRPC
     implementation 'io.grpc:grpc-stub:1.58.0'

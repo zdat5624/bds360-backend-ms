@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package payment;
+
+option java_multiple_files = true;
+option csharp_namespace = "StatisticService.Grpc.Payment";
+
+service InternalPaymentService {
+  rpc CreateTransaction(CreateTransactionRequest) returns (CreateTransactionResponse);
+}
+
+// Proto3 bắt buộc enum phải bắt đầu bằng 0
+enum GrpcTransactionType {
+  DEPOSIT = 0;  // Nạp tiền
+  PAYMENT = 1;  // Thanh toán / Chi tiền
+}
+
+message CreateTransactionRequest {
+  int64 userId = 1;
+  string userName = 2;
+  string userEmail = 3;
+  int64 amount = 4;       // Phía Client có thể truyền số dương, Server sẽ tự xử lý âm/dương
+  string description = 5;
+  GrpcTransactionType type = 6;
+}
+
+message CreateTransactionResponse {
+  bool success = 1;
+  string message = 2;
+  int64 transactionId = 3;
+}

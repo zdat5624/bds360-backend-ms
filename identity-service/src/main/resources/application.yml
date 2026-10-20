@@ -20,6 +20,18 @@ spring:
       enabled: true
       poll-interval: 2s
       quiet-period: 1s
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 3s
+          max-retries: 3
+
 
 grpc:
   server:

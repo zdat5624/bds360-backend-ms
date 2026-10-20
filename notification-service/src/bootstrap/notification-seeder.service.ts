@@ -1,3 +1,4 @@
+// --- File: src/bootstrap/notification-seeder.service.ts ---
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as fs from 'fs';
@@ -12,7 +13,7 @@ export class NotificationSeeder implements OnApplicationBootstrap {
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
-  ) {}
+  ) { }
 
   async onApplicationBootstrap() {
     this.logger.log('>>> START INIT NOTIFICATION DATABASE');
@@ -47,10 +48,10 @@ export class NotificationSeeder implements OnApplicationBootstrap {
     for (let i = 1; i <= totalNotifications; i++) {
       // ⚡ Chọn ngẫu nhiên 1 user
       const randomUser = validUsers[Math.floor(Math.random() * validUsers.length)];
-      
+
       const notificationTypeIndex = Math.floor(Math.random() * 8); // Random từ 0 -> 7 (Giữ nguyên 8 case)
       let message = '';
-      let type: NotificationType = NotificationType.SYSTEM; // Khởi tạo mặc định để linter không báo lỗi
+      let type: NotificationType = NotificationType.SYSTEM_ALERT; // Khởi tạo mặc định để linter không báo lỗi
 
       // ⚡ Giả lập dữ liệu Post & Transaction vì không còn truy cập được DB của chúng
       const randomPostId = Math.floor(Math.random() * 100) + 1;
@@ -74,22 +75,22 @@ export class NotificationSeeder implements OnApplicationBootstrap {
 
         case 3: // TRANSACTION: Nạp tiền thành công
           message = `Giao dịch thành công. Tài khoản của bạn được cộng ${randomAmount.toLocaleString('vi-VN')} VNĐ.`;
-          type = NotificationType.PAYMENT; // Spring Boot cũ gọi là TRANSACTION, NestJS gọi là PAYMENT
+          type = NotificationType.TRANSACTION; // 🌟 Fix: Dùng TRANSACTION theo định nghĩa enum mới
           break;
 
         case 4: // TRANSACTION: Trừ tiền
           message = `Thanh toán thành công. Tài khoản của bạn bị trừ ${randomAmount.toLocaleString('vi-VN')} VNĐ cho dịch vụ đăng tin mới.`;
-          type = NotificationType.PAYMENT;
+          type = NotificationType.TRANSACTION; // 🌟 Fix: Dùng TRANSACTION
           break;
 
         case 5: // SYSTEM_ALERT: Cảnh báo sắp hết hạn VIP
           message = `Gói VIP của bạn sẽ hết hạn trong vòng 3 ngày tới. Vui lòng gia hạn để duy trì quyền lợi.`;
-          type = NotificationType.SYSTEM; // Spring Boot cũ: SYSTEM_ALERT
+          type = NotificationType.SYSTEM_ALERT; // 🌟 Fix: Dùng SYSTEM_ALERT
           break;
 
         case 6: // SYSTEM_ALERT: Bảo trì hệ thống
           message = `Hệ thống BDS360 sẽ bảo trì định kỳ từ 00:00 đến 02:00 sáng mai. Xin lỗi vì sự bất tiện này!`;
-          type = NotificationType.SYSTEM;
+          type = NotificationType.SYSTEM_ALERT; // 🌟 Fix: Dùng SYSTEM_ALERT
           break;
 
         case 7: // POST: Tin đăng bị khóa do vi phạm

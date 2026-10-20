@@ -17,7 +17,16 @@ spring:
           - id: listing-service
             uri: http://listing-service:8082
             predicates:
-              - Path=/api/v1/posts/**,/api/v1/categories/**,/api/v1/admin/posts/**
+              - >-
+                Path=/api/v1/posts/**,
+                /api/v1/manage/posts/**,
+                /api/v1/categories/**,
+                /api/v1/admin/categories/**,
+                /api/v1/provinces/**,
+                /api/v1/districts/**,
+                /api/v1/addresses/**,
+                /api/v1/vips/**,
+                /api/v1/admin/vips/**
 
           # 3. Đi vào Payment Service (Java Spring Boot)
           - id: payment-service

@@ -19,6 +19,9 @@ repositories {
 }
 
 dependencies {
+    // RabitMQ
+	implementation 'org.springframework.boot:spring-boot-starter-amqp'
+
     implementation 'com.github.ben-manes.caffeine:caffeine'
 
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
@@ -52,7 +55,8 @@ dependencies {
 	testAnnotationProcessor 'org.projectlombok:lombok'
 
 
-	implementation 'net.devh:grpc-server-spring-boot-starter:3.1.0.RELEASE' // Dùng bản tương thích Spring Boot 3.x
+	implementation 'net.devh:grpc-server-spring-boot-starter:3.1.0.RELEASE'
+	implementation 'net.devh:grpc-client-spring-boot-starter:3.1.0.RELEASE'
 
     // Thư viện core gRPC
     implementation 'io.grpc:grpc-stub:1.58.0'
