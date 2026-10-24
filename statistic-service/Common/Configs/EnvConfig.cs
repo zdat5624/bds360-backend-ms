@@ -14,7 +14,7 @@ public class EnvConfig
     // ==========================================
     // GRPC URLS (Cấu hình cứng tạm thời để gọi nội bộ)
     // ==========================================
-    public string GRPC_IDENTITY_URL { get; init; } = "http://identity-service:9091";
-    public string GRPC_LISTING_URL { get; init; } = "http://listing-service:9092";
-    public string GRPC_PAYMENT_URL { get; init; } = "http://payment-service:9094";
+    public string DOTNET_GRPC_IDENTITY_URL { get; init; } = "http://identity-service:9091";
+    public string DOTNET_GRPC_LISTING_URL { get; init; } = "http://listing-service:9092";
+    public string DOTNET_GRPC_PAYMENT_URL { get; init; } = "http://payment-service:9093";
 }

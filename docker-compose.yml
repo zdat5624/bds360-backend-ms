@@ -121,6 +121,7 @@ services:
     working_dir: /app
     ports:
       - "8081:8081"
+      - "8091:8091"
     env_file:
       - .env
     volumes:
@@ -142,6 +143,7 @@ services:
     working_dir: /app
     ports:
       - "8082:8082"
+      - "9092:9092"
     env_file:
       - .env
     volumes:
@@ -163,6 +165,7 @@ services:
     working_dir: /app
     ports:
       - "8083:8083"
+      - "9093:9093"
     env_file:
       - .env
     volumes:

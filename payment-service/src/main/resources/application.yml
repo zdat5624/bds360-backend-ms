@@ -34,10 +34,10 @@ spring:
 
 grpc:
   server:
-    port: 9094
+    port: 9093
   client:
     identity-service:
-      address: ${GRPC_IDENTITY_URL:dns:///identity-service:9091}
+      address: ${GRPC_IDENTITY_URL:http://identity-service:9091}
       negotiation-type: plaintext
 
 api:

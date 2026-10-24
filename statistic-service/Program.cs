@@ -53,7 +53,7 @@ builder
         (sp, options) =>
         {
             var env = sp.GetRequiredService<IOptions<EnvConfig>>().Value;
-            options.Address = new Uri(env.GRPC_PAYMENT_URL);
+            options.Address = new Uri(env.DOTNET_GRPC_PAYMENT_URL);
         }
     )
     .WithOptimizedSocketsHandler(); // 🌟 Áp dụng cấu hình tối ưu
@@ -64,7 +64,7 @@ builder
         (sp, options) =>
         {
             var env = sp.GetRequiredService<IOptions<EnvConfig>>().Value;
-            options.Address = new Uri(env.GRPC_IDENTITY_URL);
+            options.Address = new Uri(env.DOTNET_GRPC_IDENTITY_URL);
         }
     )
     .WithOptimizedSocketsHandler();
@@ -74,7 +74,7 @@ builder
         (sp, options) =>
         {
             var env = sp.GetRequiredService<IOptions<EnvConfig>>().Value;
-            options.Address = new Uri(env.GRPC_IDENTITY_URL);
+            options.Address = new Uri(env.DOTNET_GRPC_IDENTITY_URL);
         }
     )
     .WithOptimizedSocketsHandler();
@@ -85,7 +85,7 @@ builder
         (sp, options) =>
         {
             var env = sp.GetRequiredService<IOptions<EnvConfig>>().Value;
-            options.Address = new Uri(env.GRPC_LISTING_URL);
+            options.Address = new Uri(env.DOTNET_GRPC_LISTING_URL);
         }
     )
     .WithOptimizedSocketsHandler();

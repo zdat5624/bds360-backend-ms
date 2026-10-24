@@ -1,12 +1,14 @@
+
 # ==========================================
-# CẤU HÌNH CHUNG VÀ MẶC ĐỊNH
+# APPLICATION
 # ==========================================
 spring:
   application:
     name: listing-service
-  profiles:
-    active: local
 
+  # ==========================================
+  # JPA
+  # ==========================================
   jpa:
     hibernate:
       ddl-auto: update
@@ -19,7 +21,13 @@ spring:
         '[order_inserts]': true
         '[order_updates]': true
 
+  # ==========================================
+  # DATABASE
+  # ==========================================
   datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3307/bds360_listing_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:${MYSQL_ROOT_PASSWORD:root}}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 20
@@ -27,6 +35,10 @@ spring:
       idle-timeout: 30000
       max-lifetime: 1800000
       connection-timeout: 30000
+
+  # ==========================================
+  # RABBITMQ
+  # ==========================================
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
@@ -39,74 +51,45 @@ spring:
           initial-interval: 3s
           max-retries: 3
 
+# ==========================================
+# SERVER
+# ==========================================
 server:
-  port: 8082
+  port: ${PORT:8082}
 
+# ==========================================
+# gRPC
+# ==========================================
 grpc:
   server:
     port: 9092
+  client:
+    identity-service:
+      address: ${GRPC_IDENTITY_URL:http://localhost:9091}
+      negotiation-type: plaintext
+    payment-service:
+      address: ${GRPC_PAYMENT_URL:http://localhost:9093}
+      negotiation-type: plaintext
 
+# ==========================================
+# JWT
+# ==========================================
 api:
   jwt:
     token-validity-in-seconds: 86400000
-
----
-# ==========================================
-# PROFILE: LOCAL (Môi trường phát triển)
-# ==========================================
-spring:
-  config:
-    activate:
-      on-profile: local
-
-  datasource:
-    # Lấy DB_URL từ biến môi trường (được truyền từ Docker Compose)
-    url: ${DB_URL:jdbc:mysql://localhost:3307/bds360_listing_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
-    username: root
-    password: ${MYSQL_ROOT_PASSWORD:root}
-
-app:
-  url:
-    backend: http://localhost:8080
-    frontend: http://localhost:3000
-
-api:
-  jwt:
-    # Lấy JWT_SECRET từ biến môi trường
     base64-secret: ${JWT_SECRET}
 
-mapbox:
-  api:
-    # Lấy MAPBOX_API_KEY từ biến môi trường
-    key: ${MAPBOX_API_KEY}
-
----
 # ==========================================
-# PROFILE: PROD (Môi trường Production - Render/Docker)
+# APPLICATION URLS
 # ==========================================
-spring:
-  config:
-    activate:
-      on-profile: prod
-
-  datasource:
-    url: ${DB_URL:jdbc:mysql://mysql-db:3306/bds360_listing_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true}
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:root}
-
-server:
-  address: 0.0.0.0
-  port: ${PORT:8082}
-
 app:
   url:
     backend: ${BACKEND_URL:http://localhost:8080}
     frontend: ${FRONTEND_URL:http://localhost:3000}
 
-api:
-  jwt:
-    base64-secret: ${JWT_SECRET}
-
+# ==========================================
+# MAPBOX
+# ==========================================
 mapbox:
   api:
     key: ${MAPBOX_API_KEY}
