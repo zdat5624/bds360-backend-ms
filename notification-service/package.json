@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "proto:gen": "node -e \"require('fs').mkdirSync('src/generated', { recursive: true })\" && pbjs -t static-module -w commonjs -o src/generated/proto.js ../_shared/proto/event/*.proto ../_shared/proto/*.proto && pbts -o src/generated/proto.d.ts src/generated/proto.js",
+    "proto:gen": "node -e \"const fs=require('fs'); fs.mkdirSync('src/generated', { recursive: true }); fs.mkdirSync('dist/generated', { recursive: true });\" && pbjs -t static-module -w commonjs -o src/generated/proto.js ../_shared/proto/event/*.proto ../_shared/proto/*.proto && pbts -o src/generated/proto.d.ts src/generated/proto.js && node -e \"const fs=require('fs'); const f='src/generated/proto.js'; fs.writeFileSync(f, '// @ts-nocheck' + String.fromCharCode(10) + fs.readFileSync(f)); fs.copyFileSync('src/generated/proto.js', 'dist/generated/proto.js'); fs.copyFileSync('src/generated/proto.d.ts', 'dist/generated/proto.d.ts');\"",
     "build": "npm run proto:gen && nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",

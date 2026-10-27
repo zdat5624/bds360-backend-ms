@@ -57,7 +57,7 @@ public class ManagePostController { // 🌟 Đổi tên class
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public ApiResponse<Void> deletePostAdmin(@CurrentUser UserContext adminOrMod, @PathVariable Long id) {
+    public ApiResponse<Void> deletePostAdmin(@CurrentUser UserContext adminOrMod, @PathVariable("id") Long id) {
         postService.deletePost(adminOrMod, id, true);
         return ApiResponse.success(null, "Hệ thống đã gỡ bỏ tin đăng thành công"); // 🌟 Sửa câu thông báo
     }

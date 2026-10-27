@@ -38,4 +38,12 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
         @Query("SELECT SUM(u.balance) FROM User u")
         Long sumTotalSystemBalance();
 
+        // 🌟 THÊM 2 HÀM NÀY
+        boolean existsByPhone(String phone);
+
+        // Hàm này rất quan trọng khi Update:
+        // Kiểm tra xem số điện thoại đã tồn tại ở một User khác (ID khác với ID đang
+        // update) hay chưa
+        boolean existsByPhoneAndIdNot(String phone, Long id);
+
 }

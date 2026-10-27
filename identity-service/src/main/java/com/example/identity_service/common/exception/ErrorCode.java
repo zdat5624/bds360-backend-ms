@@ -27,12 +27,14 @@ public enum ErrorCode {
         // ==========================================
         USER_NOT_FOUND(11001, HttpStatus.NOT_FOUND, "Không tìm thấy người dùng trong hệ thống."),
         USER_EXISTED(11002, HttpStatus.CONFLICT, "Email hoặc số điện thoại đã tồn tại."),
+
         USER_LOCKED(11003, HttpStatus.FORBIDDEN, "Tài khoản của bạn đã bị khóa."),
         WRONG_PASSWORD(11004, HttpStatus.BAD_REQUEST, "Mật khẩu không chính xác."),
         INVALID_CREDENTIALS(11005, HttpStatus.UNAUTHORIZED, "Thông tin đăng nhập không hợp lệ."),
         TOKEN_EXPIRED(11006, HttpStatus.UNAUTHORIZED, "Token đã hết hạn, vui lòng đăng nhập lại."),
         INVALID_OTP_CODE(11007, HttpStatus.BAD_REQUEST, "Mã xác nhận không chính xác hoặc không tồn tại."),
         CANNOT_DELETE_ADMIN(11008, HttpStatus.BAD_REQUEST, "Không thể xóa tài khoản ADMIN."),
+        PHONE_EXISTED(11009, HttpStatus.BAD_REQUEST, "Số điện thoại đã được sử dụng"),
         // ==========================================
         // 12. POST & CATEGORY MODULE (Bất động sản)
         // ==========================================

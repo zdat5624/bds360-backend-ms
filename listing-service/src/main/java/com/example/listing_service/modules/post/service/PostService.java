@@ -27,6 +27,8 @@ import com.example.listing_service.modules.address.repository.DistrictRepository
 import com.example.listing_service.modules.address.repository.ProvinceRepository;
 import com.example.listing_service.modules.address.repository.WardRepository;
 import com.example.listing_service.modules.address.service.MapboxGeocodeService;
+import com.example.listing_service.modules.category.entity.Category;
+import com.example.listing_service.modules.category.repository.CategoryRepository;
 import com.example.listing_service.modules.post.constant.PostStatus;
 import com.example.listing_service.modules.post.dto.request.ForYouPostRequest;
 import com.example.listing_service.modules.post.dto.request.PostCreateRequest;
@@ -50,6 +52,7 @@ import com.example.listing_service.modules.vip.entity.Vip;
 import com.example.listing_service.modules.vip.repository.VipRepository;
 import com.example.listing_service.security.dto.UserContext;
 
+import identity.UserInfo;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Tuple;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -77,12 +80,21 @@ public class PostService {
     private final EntityManager entityManager;
     private final IdentityGrpcClient identityGrpcClient;
     private final PaymentGrpcClient paymentGrpcClient;
+    private final CategoryRepository categoryRepository;
 
     @Transactional
     public PostResponse createPost(UserContext userContext, PostCreateRequest request) {
         // 1. Kiểm tra tài chính
         long costPerDay = 0;
         boolean isVip = false;
+
+        UserInfo userInfo = identityGrpcClient.getUserInfo(userContext.getId());
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+
+        if (category.getType() != request.getType()) {
+            throw new AppException(ErrorCode.CATEGORY_TYPE_MISMATCH);
+        }
 
         if (request.getVipId() != null) {
             var vip = vipRepository.findById(request.getVipId())
@@ -92,21 +104,23 @@ public class PostService {
         }
 
         long totalCost = request.getNumberOfDays() * costPerDay;
-
-        // 2. KIỂM TRA SỐ DƯ TRƯỚC (NẾU CÓ PHÁT SINH CHI PHÍ)
         if (totalCost > 0) {
-            long currentBalance = identityGrpcClient.getUserBalance(userContext.getId());
-            if (currentBalance < totalCost) {
+            if (userInfo.getBalance() < totalCost) {
                 throw new AppException(ErrorCode.BALANCE_NOT_ENOUGH);
             }
 
-            // 3. ĐỦ TIỀN THÌ MỚI GỌI TRỪ TIỀN
-            identityGrpcClient.deductBalance(userContext.getId(), totalCost);
         }
 
         // 2. Map DTO -> Entity
         Post post = postMapper.toEntity(request);
-        // post.setUser(user);
+        post.setCategory(category);
+        post.setUserId(userInfo.getUserId());
+        post.setAuthorName(userInfo.getName());
+        post.setAuthorEmail(userInfo.getEmail());
+        post.setAuthorPhone(userInfo.getPhone());
+        post.setAuthorAvatar(userInfo.getAvatar());
+        post.setCreatedBy(userInfo.getEmail());
+
         post.setStatus(isVip ? PostStatus.REVIEW_LATER : PostStatus.PENDING);
         post.setNotifyOnView(isVip);
         post.setCreatedAt(Instant.now());
@@ -145,6 +159,8 @@ public class PostService {
 
         // 7. Lưu Transaction
         if (totalCost > 0) {
+            identityGrpcClient.deductBalance(userContext.getId(), totalCost);
+
             paymentGrpcClient.logPaymentTransaction(
                     userContext,
                     totalCost,
@@ -165,6 +181,20 @@ public class PostService {
 
         if (post.getStatus() == PostStatus.EXPIRED) {
             throw new AppException(ErrorCode.POST_STATUS_INVALID);
+        }
+
+        Category targetCategory = post.getCategory();
+
+        // Nếu user đổi sang danh mục khác -> fetch danh mục mới
+        if (!post.getCategory().getId().equals(request.getCategoryId())) {
+            targetCategory = categoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+        }
+
+        // Kiểm tra ListingType của Request xem có khớp với Category sẽ lưu không (bất
+        // kể cũ/mới)
+        if (targetCategory.getType() != request.getType()) {
+            throw new AppException(ErrorCode.CATEGORY_TYPE_MISMATCH);
         }
 
         // 1. Map các trường cơ bản và ID (categoryId, provinceCode...)

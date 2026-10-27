@@ -39,6 +39,7 @@ message UpdateBalanceResponse {
 
 service InternalIdentityService {
 
+    // Lấy danh sách user info
     rpc GetUsersInfo (GetUsersInfoRequest) returns (GetUsersInfoReply);
 
     rpc UpdateUserBalance (UpdateBalanceRequest) returns (UpdateBalanceResponse);

@@ -32,8 +32,8 @@ import { EmailService } from './email.service';
             },
         }),
     ],
-    controllers: [EmailController],
-    providers: [EmailService, EmailConsumer],
+    controllers: [EmailController, EmailConsumer],
+    providers: [EmailService],
     exports: [EmailService], // Export để các module khác (Identity, Payment) có thể xài
 })
 export class EmailModule { }

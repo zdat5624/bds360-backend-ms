@@ -3,6 +3,7 @@ package com.example.identity_service.modules.user.dto.response;
 import java.time.Instant;
 
 import com.example.identity_service.common.constant.Role;
+import com.example.identity_service.modules.user.constant.AccountStatus;
 import com.example.identity_service.modules.user.constant.Gender;
 
 import lombok.Getter;
@@ -25,5 +26,7 @@ public class UserResponse {
     private Instant updatedAt;
     private String updatedBy;
     private Boolean isVerified;
+
+    private AccountStatus status;
 
 }

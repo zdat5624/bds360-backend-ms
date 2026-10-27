@@ -52,7 +52,7 @@ public class CategoryController {
 
     @DeleteMapping("/admin/categories/{id}")
     @IsAdmin
-    public ApiResponse<Void> deleteCategory(@PathVariable Long id) {
+    public ApiResponse<Void> deleteCategory(@PathVariable("id") Long id) {
         categoryService.deleteCategory(id);
         return ApiResponse.success(null, "Xóa danh mục thành công");
     }
@@ -74,7 +74,7 @@ public class CategoryController {
     }
 
     @GetMapping("/categories/{id}")
-    public ApiResponse<CategoryResponse> getCategoryById(@PathVariable Long id) {
+    public ApiResponse<CategoryResponse> getCategoryById(@PathVariable("id") Long id) {
         return ApiResponse.success(categoryService.getCategoryById(id), "Lấy thông tin chi tiết danh mục thành công");
     }
 }

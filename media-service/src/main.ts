@@ -11,6 +11,7 @@ async function bootstrap() {
   // CORS ở API GATEWAY
   // app.enableCors();
 
+  app.setGlobalPrefix('api/v1');
   // 1. Dùng Pipe Custom đã được đóng gói
   app.useGlobalPipes(new CustomValidationPipe());
 

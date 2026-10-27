@@ -1,3 +1,9 @@
+# ==========================================
+# SERVER
+# ==========================================
+server:
+  port: ${LISTING_PORT:8082}
+
 
 # ==========================================
 # APPLICATION
@@ -51,24 +57,21 @@ spring:
           initial-interval: 3s
           max-retries: 3
 
-# ==========================================
-# SERVER
-# ==========================================
-server:
-  port: ${PORT:8082}
+
 
 # ==========================================
 # gRPC
 # ==========================================
 grpc:
   server:
-    port: 9092
+    address: 0.0.0.0
+    port: ${GRPC_LISTING_PORT:9092}
   client:
     identity-service:
-      address: ${GRPC_IDENTITY_URL:http://localhost:9091}
+      address: static://${IDENTITY_HOST:localhost}:${GRPC_IDENTITY_PORT:9091}
       negotiation-type: plaintext
     payment-service:
-      address: ${GRPC_PAYMENT_URL:http://localhost:9093}
+      address: static://${PAYMENT_HOST:localhost}:${GRPC_PAYMENT_PORT:9093}
       negotiation-type: plaintext
 
 # ==========================================
@@ -76,7 +79,7 @@ grpc:
 # ==========================================
 api:
   jwt:
-    token-validity-in-seconds: 86400000
+    token-validity-in-seconds: ${JWT_TOKEN_VALIDITY_IN_SECONDS:86400000}
     base64-secret: ${JWT_SECRET}
 
 # ==========================================

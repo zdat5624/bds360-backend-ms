@@ -66,7 +66,7 @@ public class TransactionController {
     @ResponseStatus(HttpStatus.OK)
     @RequireLogin
     public ApiResponse<TransactionResponse> getTransactionById(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @CurrentUser UserContext user) {
 
         return ApiResponse.success(transactionService.getTransactionById(id, user),

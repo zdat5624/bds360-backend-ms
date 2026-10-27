@@ -5,6 +5,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -33,25 +34,68 @@ public class SecurityConfiguration {
     // KHÔNG CẦN PasswordEncoder ở đây nữa
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(
+            HttpSecurity http,
+            CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
 
         http
                 .csrf(c -> c.disable())
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(
                         authz -> authz
-                                // Cho phép VNPAY gọi API trả kết quả mà không cần token
-                                .requestMatchers("/api/v1/payments/vnpay-return").permitAll()
-                                // Cho phép Swagger
-                                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                                // Mọi request khác tới Payment Service đều phải có JWT Token hợp lệ
-                                .anyRequest().authenticated())
+
+                                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+
+                                .requestMatchers("/ws/**").permitAll()
+                                .requestMatchers(
+                                        "/",
+                                        "/uploads/**",
+                                        "/api/v1/auth/**",
+                                        "/api/v1/identity/**",
+                                        "/api/v1/address/**",
+
+                                        "/api/v1/payment/vnpay-return",
+
+                                        "/v3/api-docs/**",
+                                        "/swagger-ui/**",
+                                        "/swagger-ui.html"
+
+                                ).permitAll()
+
+                                .requestMatchers(HttpMethod.GET,
+                                        "/api/v1/posts",
+                                        "/api/v1/posts/for-you",
+                                        "/api/v1/posts/{id}/view",
+                                        "/api/v1/posts/{id}/analytics/views",
+
+                                        "/api/v1/posts/{id}/related",
+
+                                        "/api/v1/posts/analytics/**",
+
+                                        "/api/v1/posts/{id}",
+
+                                        "/api/v1/vips",
+                                        "/api/v1/categories",
+                                        "/api/v1/categories/**",
+                                        "/api/v1/provinces/**",
+                                        "/api/v1/districts/**",
+
+                                        "/api/v1/posts/{postId}/address"
+
+                                ).permitAll()
+
+                                .requestMatchers(HttpMethod.POST, "/api/v1/posts/*/view").permitAll()
+
+                                .anyRequest().authenticated()
+
+                )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt
                                 .jwtAuthenticationConverter(jwtAuthenticationConverter())))
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(customAuthenticationEntryPoint)
                         .accessDeniedHandler(customAccessDeniedHandler))
+
                 .formLogin(f -> f.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 

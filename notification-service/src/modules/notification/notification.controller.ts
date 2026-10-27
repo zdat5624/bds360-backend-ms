@@ -103,6 +103,7 @@ export class NotificationController {
 
 
   @Post('test-create')
+  @RequireLogin()
   async testCreateNotification(
     @Body() request: CreateNotificationRequest,
     @CurrentUser() user: UserContext,

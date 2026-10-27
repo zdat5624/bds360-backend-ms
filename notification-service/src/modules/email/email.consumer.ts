@@ -1,7 +1,8 @@
-// File: src/modules/email/email.consumer.ts
+// --- File: src/modules/email/email.consumer.ts ---
 import { event } from '@/generated/proto';
 import { Controller, Logger } from '@nestjs/common';
-import { EventPattern } from '@nestjs/microservices';
+import { Ctx, EventPattern, RmqContext } from '@nestjs/microservices';
+import { ConsumeMessage } from 'amqplib';
 import { EmailService } from './email.service';
 
 @Controller()
@@ -11,10 +12,13 @@ export class EmailConsumer {
     constructor(private readonly emailService: EmailService) { }
 
     @EventPattern('send_deposit_success_email')
-    async handleDepositSuccessEvent(data: Buffer): Promise<void> {
+    async handleDepositSuccessEvent(@Ctx() context: RmqContext): Promise<void> {
         try {
+            // Lấy trực tiếp Buffer gốc từ RabbitMQ message
+            const originalMessage = context.getMessage() as ConsumeMessage;
+            const rawBuffer: Buffer = originalMessage.content;
 
-            const decodedData = event.DepositSuccessEvent.decode(data);
+            const decodedData = event.DepositSuccessEvent.decode(rawBuffer);
 
             this.logger.log(`[EmailConsumer] Received DepositSuccessEvent for: ${decodedData.username}`);
 
@@ -33,10 +37,14 @@ export class EmailConsumer {
     }
 
     @EventPattern('send_forgot_password_email')
-    async handleForgotPasswordEvent(data: Buffer): Promise<void> {
+    async handleForgotPasswordEvent(@Ctx() context: RmqContext): Promise<void> {
         try {
+            // 🌟 Lấy trực tiếp Buffer nhị phân gốc từ amqplib
+            const originalMessage = context.getMessage() as ConsumeMessage;
+            const rawBuffer: Buffer = originalMessage.content;
+
             // Giải mã byte array từ Protobuf
-            const decodedData = event.ForgotPasswordEvent.decode(data);
+            const decodedData = event.ForgotPasswordEvent.decode(rawBuffer);
 
             this.logger.log(`[EmailConsumer] Received ForgotPasswordEvent for: ${decodedData.username}`);
 

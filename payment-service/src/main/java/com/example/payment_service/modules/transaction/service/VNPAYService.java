@@ -1,3 +1,4 @@
+// --- File: src/main/java/com/example/payment_service/modules/transaction/service/VNPAYService.java ---
 package com.example.payment_service.modules.transaction.service;
 
 import java.net.URLEncoder;
@@ -39,18 +40,13 @@ import lombok.extern.slf4j.Slf4j;
 public class VNPAYService {
 
     private final TransactionRepository transactionRepository;
-    // private final UserRepository userRepository;
-    // private final EmailService emailService;
-    // private final NotificationService notificationService;
     private final VnPayProperties vnPayProperties;
     private final EmailEventPublisher emailEventPublisher;
-
     private final IdentityGrpcClient identityGrpcClient;
 
     // ==========================================
     // 1. TẠO LINK THANH TOÁN
     // ==========================================
-
     public PaymentLinkResponse createVNPayLink(UserContext userContext, long inputAmount, String ipAdress) {
         long amount = inputAmount * 100;
 
@@ -69,12 +65,14 @@ public class VNPAYService {
         vnp_Params.put("vnp_Locale", "vn");
         vnp_Params.put("vnp_ReturnUrl", vnPayProperties.getReturnUrlBackend());
         vnp_Params.put("vnp_IpAddr", ipAdress);
-
         vnp_Params.put("vnp_BankCode", "NCB");
 
-        // Thời gian tạo và hết hạn
-        Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
+        // 🌟 FIX MÚI GIỜ VIỆT NAM (GMT+7) CHO CẢ CALENDAR VÀ FORMATTER
+        TimeZone vnTimeZone = TimeZone.getTimeZone("Asia/Ho_Chi_Minh");
+        Calendar cld = Calendar.getInstance(vnTimeZone);
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+        formatter.setTimeZone(vnTimeZone); // <-- Bắt buộc phải có dòng này!
+
         String vnp_CreateDate = formatter.format(cld.getTime());
         vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
 
@@ -92,8 +90,6 @@ public class VNPAYService {
             String fieldName = itr.next();
             String fieldValue = vnp_Params.get(fieldName);
             if ((fieldValue != null) && (fieldValue.length() > 0)) {
-                // Sử dụng StandardCharsets.US_ASCII trực tiếp để tránh
-                // UnsupportedEncodingException
                 hashData.append(fieldName).append('=').append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
                 query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII)).append('=')
                         .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
@@ -189,11 +185,6 @@ public class VNPAYService {
                 transaction.getUserId(), transaction.getAmount());
 
         try {
-            // UpdateBalanceRequest request = UpdateBalanceRequest.newBuilder()
-            // .setUserId(transaction.getUserId())
-            // .setAmount(transaction.getAmount())
-            // .build();
-
             UpdateBalanceResponse response = identityGrpcClient.updateBalance(transaction.getUserId(),
                     transaction.getAmount());
 
@@ -201,7 +192,9 @@ public class VNPAYService {
                 log.info("gRPC Success: Đã cộng tiền cho UserId {}. Số dư mới: {}",
                         transaction.getUserId(), response.getNewBalance());
 
+                // 🌟 Đồng bộ luôn múi giờ VN cho thời gian hiển thị trong Email
                 SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+                sdf.setTimeZone(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
                 String currentTime = sdf.format(new Date());
 
                 emailEventPublisher.publishDepositSuccess(
@@ -217,7 +210,7 @@ public class VNPAYService {
         } catch (Exception e) {
             log.error("Lỗi kết nối gRPC sang Identity Service khi cộng tiền cho UserId: {}", transaction.getUserId(),
                     e);
-            throw e; // Ném lỗi để rollback Transaction Database nếu cần
+            throw e;
         }
     }
 

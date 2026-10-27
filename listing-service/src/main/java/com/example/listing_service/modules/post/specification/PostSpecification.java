@@ -64,7 +64,7 @@ public class PostSpecification {
 
 			// 🌟 FIX 2: Không Join bảng User nữa, tìm thẳng email trong trường createdBy
 			if (filter.getUserEmail() != null && !filter.getUserEmail().isEmpty()) {
-				predicate = cb.and(predicate, cb.equal(root.get("createdBy"), filter.getUserEmail()));
+				predicate = cb.and(predicate, cb.equal(root.get("authorEmail"), filter.getUserEmail()));
 			}
 
 			// 2. LOGIC TÌM KIẾM ĐỘNG DỰA TRÊN `searchBy`
@@ -96,7 +96,7 @@ public class PostSpecification {
 
 						case "email":
 							// 🌟 FIX 3: Tìm kiếm Like email bằng trường createdBy
-							searchPredicates.add(cb.like(cb.lower(root.get("createdBy")),
+							searchPredicates.add(cb.like(cb.lower(root.get("authorEmail")),
 									"%" + keyword.toLowerCase() + "%"));
 							break;
 

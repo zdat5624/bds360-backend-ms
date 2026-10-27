@@ -1,3 +1,4 @@
+// --- File: Program.cs ---
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -33,7 +34,7 @@ builder
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
-// 1. Load và check file .env
+// 1. Load và check file .env (Sẽ map IDENTITY_HOST, GRPC_IDENTITY_PORT...)
 builder.Services.AddAppConfigurations(builder.Configuration);
 
 // 2. Setup JWT (Truyền cấu hình vào đây)
@@ -48,17 +49,21 @@ builder.Services.AddScoped<ManageUserStatisticsService>();
 builder.Services.AddScoped<UserClientStatisticsService>();
 builder.Services.AddScoped<SystemOverviewService>();
 
+// ==========================================
+// 4. SETUP GRPC CLIENTS
+// ==========================================
+
 builder
     .Services.AddGrpcClient<InternalPaymentStatisticService.InternalPaymentStatisticServiceClient>(
         (sp, options) =>
         {
             var env = sp.GetRequiredService<IOptions<EnvConfig>>().Value;
+            // Gọi URL đã được lắp ráp: http://payment-service:9093
             options.Address = new Uri(env.DOTNET_GRPC_PAYMENT_URL);
         }
     )
-    .WithOptimizedSocketsHandler(); // 🌟 Áp dụng cấu hình tối ưu
+    .WithOptimizedSocketsHandler(); // 🌟 Áp dụng cấu hình tối ưu HTTP/2
 
-// Đăng ký Client cho Identity
 builder
     .Services.AddGrpcClient<InternalIdentityStatisticService.InternalIdentityStatisticServiceClient>(
         (sp, options) =>
@@ -79,7 +84,6 @@ builder
     )
     .WithOptimizedSocketsHandler();
 
-// Đăng ký Client cho Listing
 builder
     .Services.AddGrpcClient<InternalListingStatisticService.InternalListingStatisticServiceClient>(
         (sp, options) =>

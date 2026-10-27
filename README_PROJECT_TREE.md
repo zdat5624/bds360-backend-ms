@@ -32,6 +32,7 @@ bds360-backend
 │     └─ init
 │        └─ init.sql
 ├─ docker-compose.yml
+├─ docker-compose.yml.txt
 ├─ dotnet-tools.json
 ├─ identity-service
 │  ├─ gradle
@@ -175,6 +176,8 @@ bds360-backend
 │     │     ├─ application.yml
 │     │     ├─ data
 │     │     │  └─ users.csv
+│     │     ├─ META-INF
+│     │     │  └─ additional-spring-configuration-metadata.json
 │     │     ├─ static
 │     │     └─ templates
 │     └─ test
@@ -226,6 +229,9 @@ bds360-backend
 │     │  │           │  │  └─ MapperConfiguration.java
 │     │  │           │  └─ util
 │     │  │           ├─ grpc
+│     │  │           │  ├─ client
+│     │  │           │  │  ├─ IdentityGrpcClient.java
+│     │  │           │  │  └─ PaymentGrpcClient.java
 │     │  │           │  └─ InternalListingStatisticGrpcService.java
 │     │  │           ├─ ListingServiceApplication.java
 │     │  │           ├─ messaging
@@ -380,6 +386,8 @@ bds360-backend
 │     │     ├─ data
 │     │     │  ├─ address.json
 │     │     │  └─ users.csv
+│     │     ├─ META-INF
+│     │     │  └─ additional-spring-configuration-metadata.json
 │     │     ├─ static
 │     │     └─ templates
 │     └─ test
@@ -437,6 +445,7 @@ bds360-backend
 │  │  └─ jest-e2e.json
 │  └─ tsconfig.json
 ├─ notification-service
+│  ├─ .eslintignore
 │  ├─ .prettierrc
 │  ├─ eslint.config.mjs
 │  ├─ nest-cli.json
@@ -567,7 +576,9 @@ bds360-backend
 │     │  │           │  ├─ client
 │     │  │           │  │  └─ IdentityGrpcClient.java
 │     │  │           │  ├─ InternalPaymentGrpcService.java.txt
-│     │  │           │  └─ InternalPaymentStatisticGrpcService.java
+│     │  │           │  ├─ InternalPaymentStatisticGrpcService.java
+│     │  │           │  └─ server
+│     │  │           │     └─ PaymentGrpcServerImpl.java
 │     │  │           ├─ messaging
 │     │  │           │  ├─ config
 │     │  │           │  │  └─ RabbitMQConfig.java
@@ -608,6 +619,7 @@ bds360-backend
 │     │  │           │     │  └─ TransactionRepository.java
 │     │  │           │     ├─ service
 │     │  │           │     │  ├─ TransactionService.java
+│     │  │           │     │  ├─ UserSyncService.java
 │     │  │           │     │  └─ VNPAYService.java
 │     │  │           │     ├─ specification
 │     │  │           │     │  └─ TransactionSpecification.java
@@ -635,6 +647,8 @@ bds360-backend
 │     │     ├─ application.yml
 │     │     ├─ data
 │     │     │  └─ users.csv
+│     │     ├─ META-INF
+│     │     │  └─ additional-spring-configuration-metadata.json
 │     │     ├─ static
 │     │     └─ templates
 │     └─ test
@@ -727,9 +741,7 @@ bds360-backend
       │  ├─ notification_event.proto
       │  └─ user_event.proto
       ├─ identity.proto
-      ├─ listing.proto.txt
-      ├─ notification.proto.txt
-      ├─ payment.proto.txt
+      ├─ payment.proto
       └─ statistic
          ├─ identity_statistic.proto
          ├─ listing_statistic.proto

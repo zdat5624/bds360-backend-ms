@@ -1,11 +1,14 @@
-// File: src/main.ts
+// --- File: src/main.ts ---
 import { NestFactory } from '@nestjs/core';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filter/global-exception.filter';
 import { TransformInterceptor } from './common/interceptor/transform.interceptor';
 import { CustomValidationPipe } from './common/pipe/custom-validation.pipe';
 import { envConfig } from './config/env.config';
+
+// 🌟 Import 2 file cấu hình RabbitMQ và gRPC
+import { getGrpcConfig } from './config/grpc.config';
+import { getRabbitMQConfig } from './config/rabbitmq.config';
 
 async function bootstrap() {
   // 1. Chỉ khởi tạo AppModule 1 lần duy nhất
@@ -17,23 +20,18 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-  // 3. 🌟 "CẮM" (CONNECT) MICROSERVICE VÀO APP ĐANG CÓ
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.RMQ,
-    options: {
-      urls: [`amqp://${envConfig.RABBITMQ_USER}:${envConfig.RABBITMQ_PASSWORD}@${envConfig.RABBITMQ_HOST}:${envConfig.RABBITMQ_PORT}`],
-      queue: 'email_queue', // Tên hàng đợi
-      queueOptions: {
-        durable: true, // Giữ message khi RabbitMQ restart
-      },
-    },
-  });
+  // 3. 🌟 CẮM RABBITMQ MICROSERVICE
+  app.connectMicroservice(getRabbitMQConfig());
 
-  // 4. Bắt đầu lắng nghe các event từ RabbitMQ (Không block luồng HTTP)
+  // 4. 🌟 CẮM gRPC MICROSERVICE
+  app.connectMicroservice(getGrpcConfig());
+
+  // 5. Bắt đầu lắng nghe các event từ RabbitMQ và gRPC (Không block luồng HTTP)
   await app.startAllMicroservices();
   console.log('🐰 Notification Service (RabbitMQ) is listening to "email_queue"');
+  console.log(`🔌 Notification Service (gRPC) is running on port: ${envConfig.GRPC_NOTIFICATION_PORT}`);
 
-  // 5. Mở port chạy server HTTP
+  // 6. Mở port chạy server HTTP
   const PORT = envConfig.NOTIFICATION_PORT;
   await app.listen(PORT);
   console.log(`🚀 Notification Service (HTTP) is running on port: ${PORT}`);

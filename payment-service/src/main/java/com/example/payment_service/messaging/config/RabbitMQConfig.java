@@ -24,10 +24,11 @@ public class RabbitMQConfig {
         return new Queue(PAYMENT_USER_SYNC_QUEUE, true);
     }
 
+    // 🌟 CHỈ BINDING SỰ KIỆN UPDATE: Giữ nguyên dữ liệu giao dịch cũ khi User bị
+    // xóa
     @Bean
-    public Binding bindingUserDeleted(Queue paymentUserSyncQueue, TopicExchange identityExchange) {
-        // Chỉ hứng sự kiện xóa để ẩn danh hóa đơn cũ
-        return BindingBuilder.bind(paymentUserSyncQueue).to(identityExchange).with("user.deleted");
+    public Binding bindingUserUpdated(Queue paymentUserSyncQueue, TopicExchange identityExchange) {
+        return BindingBuilder.bind(paymentUserSyncQueue).to(identityExchange).with("user.updated");
     }
 
     @Bean

@@ -32,7 +32,7 @@ spring:
           - id: payment-service
             uri: http://payment-service:8083
             predicates:
-              - Path=/api/v1/payments/**,/api/v1/transactions/**,/api/v1/admin/transactions/**
+              - Path=/api/v1/payments/**,/api/v1/payment/**,/api/v1/transactions/**,/api/v1/admin/transactions/**
 
           # 4. Đi vào Media Service (Node.js - NestJS)
           - id: media-service

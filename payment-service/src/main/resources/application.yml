@@ -1,5 +1,5 @@
 server:
-  port: 8083
+  port: ${PAYMENT_PORT:8083}
 
 spring:
   application:
@@ -12,9 +12,9 @@ spring:
       poll-interval: 500ms
       quiet-period: 300ms
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3307/bds360_payment_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    url: ${DB_URL:jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3307}/${MYSQL_DATABASE_PAYMENT:bds360_payment_db}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:root}
+    password: ${DB_PASSWORD:${MYSQL_ROOT_PASSWORD:root}}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -34,22 +34,21 @@ spring:
 
 grpc:
   server:
-    port: 9093
+    address: 0.0.0.0
+    port: ${GRPC_PAYMENT_PORT:9093}
   client:
     identity-service:
-      address: ${GRPC_IDENTITY_URL:http://identity-service:9091}
+      address: static://${IDENTITY_HOST:localhost}:${GRPC_IDENTITY_PORT:9091}
       negotiation-type: plaintext
 
 api:
   jwt:
     base64-secret: ${JWT_SECRET}
-    token-validity-in-seconds: ${JWT_TOKEN_VALIDITY_IN_SECONDS:3600000}
-
-
+    token-validity-in-seconds: ${JWT_TOKEN_VALIDITY_IN_SECONDS:86400000}
 
 vnp:
   tmn-code: ${VNP_TMN_CODE:87U46G89}
   secret-key: ${VNP_SECRET_KEY:VCFPST44XXTNDK11SOPGNS6X6GAKO99I}
   pay-url: ${VNP_PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
-  return-url-backend: ${VNP_RETURN_URL_BACKEND:http://localhost:8080/api/v1/payments/vnpay-return}
-  return-url-frontend: ${VNP_RETURN_URL_FRONTEND:http://localhost:3000/payment-success}
+  return-url-backend: ${BACKEND_URL:http://localhost:8080}/api/v1/payment/vnpay-return
+  return-url-frontend: ${FRONTEND_URL:http://localhost:3000}/user/payments/result

@@ -31,9 +31,11 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
@@ -65,6 +67,10 @@ public class AuthService {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
 
+        if (userService.isPhoneExist(request.getPhone())) {
+            throw new AppException(ErrorCode.USER_EXISTED);
+        }
+
         User newUser = userMapper.toUser(request);
         newUser.setPassword(passwordEncoder.encode(request.getPassword()));
         newUser.setRole(Role.USER);
@@ -73,8 +79,11 @@ public class AuthService {
         // --- ĐOẠN THÊM VÀO ĐỂ TỰ ĐỘNG LOGIN SAU KHI ĐĂNG KÝ ---
 
         // 1. Tạo UserDetails
-        org.springframework.security.core.userdetails.UserDetails userDetails = new org.springframework.security.core.userdetails.User(
+        com.example.identity_service.security.CustomUserDetails userDetails = new com.example.identity_service.security.CustomUserDetails(
+                savedUser.getId(),
                 savedUser.getEmail(),
+                savedUser.getName(),
+                savedUser.getPhone(),
                 savedUser.getPassword(),
                 Collections.singletonList(new SimpleGrantedAuthority(savedUser.getRole().name())));
 
@@ -101,14 +110,15 @@ public class AuthService {
     public AuthResponse googleLogin(GoogleLoginRequest request) {
         try {
             // 1. Cấu hình GoogleIdTokenVerifier
-            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(),
-                    new GsonFactory())
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                    new NetHttpTransport(), new GsonFactory())
                     .setAudience(Collections.singletonList(googleProperties.getId()))
                     .build();
 
             // 2. Verify token từ client gửi lên
             GoogleIdToken idToken = verifier.verify(request.getToken());
             if (idToken == null) {
+                log.error("Google token verification failed (Token is null or invalid)");
                 throw new AppException(ErrorCode.INVALID_CREDENTIALS);
             }
 
@@ -117,40 +127,40 @@ public class AuthService {
             String email = payload.getEmail();
             String name = (String) payload.get("name");
             String avatarUrl = (String) payload.get("picture");
-            // 4. Kiểm tra user trong DB (hàm này trả về null nếu không tìm thấy, không cần
-            // try-catch)
+
+            // 4. Kiểm tra user trong DB
             User currentUserDB = userService.handleGetUserByUserName(email);
 
             // 5. Tạo mới nếu chưa tồn tại
             if (currentUserDB == null) {
                 User newUser = new User();
                 newUser.setEmail(email);
-
-                // Xử lý Name: Nếu Google không có name (hiếm), set tạm 1 tên
                 newUser.setName(name != null ? name : "Người dùng " + email.split("@")[0]);
-
-                // Xử lý Avatar: Nhét thẳng link ảnh Google vào
                 newUser.setAvatar(avatarUrl);
-
                 newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
                 newUser.setRole(Role.USER);
                 newUser.setGender(Gender.OTHER);
 
-                // FIX BUG: Truyền số điện thoại ảo ("0000000000") thay vì null
-                // để vượt qua valid @NotBlank của Entity. User có thể tự update lại sau.
-                newUser.setPhone("0000000000");
+                // 🌟 Bắt buộc lưu null vào DB để tránh lỗi "Duplicate entry" cho cột Unique
+                newUser.setPhone(null);
 
                 currentUserDB = userService.saveInternalUser(newUser);
+                log.info("Đã tạo mới tài khoản qua Google Login cho email: {}", email);
             }
 
-            // 6. Xác thực hệ thống & Sinh JWT Token đồng bộ với CustomUserDetailsService
-            // Khởi tạo UserDetails giống cách CustomUserDetailsService
-            org.springframework.security.core.userdetails.UserDetails userDetails = new org.springframework.security.core.userdetails.User(
+            // 🌟 6. Biến đổi dữ liệu an toàn để sinh Token
+            // Nếu phone lấy từ DB lên là null -> đổi thành chuỗi rỗng "" để tránh sập JWT
+            String safePhone = currentUserDB.getPhone() != null ? currentUserDB.getPhone() : "";
+
+            // Khởi tạo UserDetails đúng với format gốc của bạn
+            com.example.identity_service.security.CustomUserDetails userDetails = new com.example.identity_service.security.CustomUserDetails(
+                    currentUserDB.getId(),
                     currentUserDB.getEmail(),
+                    currentUserDB.getName(),
+                    safePhone, // Dùng safePhone thay vì truyền trực tiếp
                     currentUserDB.getPassword(),
                     Collections.singletonList(new SimpleGrantedAuthority(currentUserDB.getRole().name())));
 
-            // Truyền userDetails vào làm Principal
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                     userDetails,
                     null,
@@ -158,15 +168,24 @@ public class AuthService {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // Sinh token
+            // 7. Sinh token
             String accessToken = securityService.createToken(authentication);
+            log.info("Google Login thành công cho email: {}", email);
 
             return new AuthResponse(accessToken, userMapper.toUserResponse(currentUserDB));
 
         } catch (AppException e) {
+            // Ném lại lỗi hệ thống đã định nghĩa
             throw e;
-        } catch (Exception e) {
+        } catch (java.security.GeneralSecurityException | java.io.IOException e) {
+            log.error("Lỗi parse hoặc verify Google Token: ", e);
             throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+        } catch (Exception e) {
+            // 🌟 In log chi tiết ra Terminal nếu có bất kỳ lỗi gì khác (VD: lỗi JWT, lỗi
+            // Null)
+            log.error("Lỗi hệ thống không xác định trong quá trình Google Login: ", e);
+            throw new AppException(ErrorCode.INTERNAL_ERROR);
         }
     }
+
 }

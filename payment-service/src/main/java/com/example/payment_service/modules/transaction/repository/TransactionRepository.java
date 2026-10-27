@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.example.payment_service.modules.transaction.entity.Transaction;
 
@@ -22,5 +23,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long>,
         @Transactional
         @Query("UPDATE Transaction t SET t.status = 'FAILED', t.description = 'Giao dịch hết hạn: người dùng không hoàn thành' WHERE t.status = 'PENDING' AND t.createdAt <= :expiryTime")
         int updateExpiredTransactions(Instant expiryTime);
+
+        // 3. Hàm đồng bộ thông tin User khi có sự kiện user.updated
+        @Modifying
+        @Transactional
+        @Query("UPDATE Transaction t SET t.userName = :userName, t.userEmail = :userEmail WHERE t.userId = :userId")
+        int syncUserInfo(@Param("userId") Long userId, @Param("userName") String userName,
+                        @Param("userEmail") String userEmail);
 
 }

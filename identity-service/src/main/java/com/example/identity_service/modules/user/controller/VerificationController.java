@@ -66,7 +66,7 @@ public class VerificationController {
     // 🌟 API đã được cập nhật để gọi logic "Smart Latest" của bạn
     @GetMapping("/manage/verification-requests/users/{userId}/latest")
     @ResponseStatus(HttpStatus.OK)
-    public ApiResponse<VerificationResponse> getLatestVerification(@PathVariable Long userId) {
+    public ApiResponse<VerificationResponse> getLatestVerification(@PathVariable("userId") Long userId) {
         return ApiResponse.success(
                 verificationService.getLatestVerificationInfo(userId), // 👈 Đã đổi tên hàm ở đây
                 "Lấy hồ sơ xác thực mới nhất thành công");

@@ -66,7 +66,7 @@ public class User {
 
     private String avatar;
 
-    @NotBlank(message = "Phone không được để trống")
+    @Column(unique = true)
     private String phone;
 
     private String address;

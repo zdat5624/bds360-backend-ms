@@ -1,4 +1,4 @@
-// File: src/config/env.config.ts
+// --- File: src/config/env.config.ts ---
 import { config } from 'dotenv';
 import { z } from 'zod';
 
@@ -20,14 +20,12 @@ export const envSchema = z.object({
     MAIL_USERNAME: z.string().email('MAIL_USERNAME phải là email hợp lệ'),
     MAIL_PASSWORD: z.string().min(1, 'MAIL_PASSWORD không được để trống'),
 
-    // 🌟 THÊM KHAI BÁO RABBITMQ Ở ĐÂY
     RABBITMQ_HOST: z.string().default('localhost'),
     RABBITMQ_PORT: z.coerce.number().int().positive().default(5672),
     RABBITMQ_USER: z.string().default('guest'),
     RABBITMQ_PASSWORD: z.string().default('guest'),
 
-    NOTIFICATION_GRPC_PORT: z.coerce.number().int().positive().default(9095),
-    GRPC_NOTIFICATION_URL: z.string().default('http://notification-service:9095'),
+    GRPC_NOTIFICATION_PORT: z.coerce.number().int().positive().default(9095),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

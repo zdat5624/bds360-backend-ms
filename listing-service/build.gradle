@@ -35,9 +35,6 @@ dependencies {
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.0'
 
 
-	// GG
-	implementation 'com.google.api-client:google-api-client:2.2.0'
-	implementation 'com.google.http-client:google-http-client-gson:1.43.3'
 
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 

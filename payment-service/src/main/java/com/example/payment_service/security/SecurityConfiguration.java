@@ -41,7 +41,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(
                         authz -> authz
                                 // Cho phép VNPAY gọi API trả kết quả mà không cần token
-                                .requestMatchers("/api/v1/payments/vnpay-return").permitAll()
+                                .requestMatchers("/api/v1/payment/vnpay-return").permitAll()
                                 // Cho phép Swagger
                                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                                 // Mọi request khác tới Payment Service đều phải có JWT Token hợp lệ

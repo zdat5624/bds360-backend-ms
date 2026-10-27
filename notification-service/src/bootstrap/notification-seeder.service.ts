@@ -155,12 +155,12 @@ export class NotificationSeeder implements OnApplicationBootstrap {
       const idStr = cleanCols[0];
       const name = cleanCols[9] || 'Người dùng ẩn danh';
       const phone = cleanCols[11] || '09xxxxxxxx';
-      const role = cleanCols[12] || '';
+      // const role = cleanCols[12] || '';
 
       const userId = idStr ? parseInt(idStr, 10) : i;
 
       // Bỏ qua admin
-      if (role === 'ADMIN') continue;
+      // if (role === 'ADMIN') continue;
 
       validUsers.push({ id: userId, name, phone });
     }

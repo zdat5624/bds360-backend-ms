@@ -1,7 +1,13 @@
+// --- File: src/main/java/com/example/payment_service/messaging/consumer/PaymentEventConsumer.java ---
 package com.example.payment_service.messaging.consumer;
 
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
+import com.example.payment_service.messaging.config.RabbitMQConfig;
+import com.example.payment_service.modules.transaction.service.UserSyncService;
+
+import event.UserProfileUpdatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -10,28 +16,29 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class PaymentEventConsumer {
 
-    // private final TransactionRepository transactionRepository;
+    private final UserSyncService userSyncService;
 
-    // @RabbitListener(queues = RabbitMQConfig.PAYMENT_USER_SYNC_QUEUE)
-    // @Transactional
-    // public void handleUserEvents(byte[] messageBytes,
-    // org.springframework.amqp.core.Message message) {
-    // String routingKey = message.getMessageProperties().getReceivedRoutingKey();
+    @RabbitListener(queues = RabbitMQConfig.PAYMENT_USER_SYNC_QUEUE)
+    public void handleUserEvents(byte[] messageBytes, org.springframework.amqp.core.Message message) throws Exception {
+        String routingKey = message.getMessageProperties().getReceivedRoutingKey();
 
-    // try {
-    // if ("user.deleted".equals(routingKey)) {
-    // UserDeletedEvent event = UserDeletedEvent.parseFrom(messageBytes);
-    // Long userId = event.getUserId();
+        try {
+            if ("user.updated".equals(routingKey)) {
+                // Parse Protobuf event
+                UserProfileUpdatedEvent event = UserProfileUpdatedEvent.parseFrom(messageBytes);
 
-    // // Ẩn danh giao dịch cũ
-    // transactionRepository.anonymizeTransactionsForUser(userId);
+                // Đồng bộ qua Service
+                userSyncService.syncUserProfile(
+                        event.getUserId(),
+                        event.getName(),
+                        event.getEmail() // Cập nhật tên và email mới trên hóa đơn
+                );
 
-    // log.info("Handled DELETED event for userId: {}. Transactions anonymized.",
-    // userId);
-    // }
-    // } catch (Exception e) {
-    // log.error("Error processing RabbitMQ event with routingKey: {}", routingKey,
-    // e);
-    // }
-    // }
+                log.info("Handled UPDATED event for userId: {}", event.getUserId());
+            }
+        } catch (Exception e) {
+            log.error("Error processing RabbitMQ event with routingKey: {}", routingKey, e);
+            throw e;
+        }
+    }
 }

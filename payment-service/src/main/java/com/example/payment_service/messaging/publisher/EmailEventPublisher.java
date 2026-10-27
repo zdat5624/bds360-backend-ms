@@ -1,3 +1,4 @@
+// --- File: src/main/java/com/example/payment_service/messaging/publisher/EmailEventPublisher.java ---
 package com.example.payment_service.messaging.publisher;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -25,9 +26,10 @@ public class EmailEventPublisher {
                 .setTransactionTime(transactionTime)
                 .build();
 
-        // 2. Gửi byte[] vào RabbitMQ kèm Header "event_type"
+        // 2. Gửi byte[] vào RabbitMQ kèm Header "pattern"
         rabbitTemplate.convertAndSend(RabbitMQConfig.EMAIL_QUEUE, event.toByteArray(), message -> {
-            message.getMessageProperties().setHeader("event_type", "send_deposit_success_email");
+            message.getMessageProperties().setHeader("pattern", "send_deposit_success_email");
+            message.getMessageProperties().setContentType("application/x-protobuf");
             return message;
         });
 

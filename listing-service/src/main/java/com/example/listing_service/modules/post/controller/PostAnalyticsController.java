@@ -42,7 +42,7 @@ public class PostAnalyticsController {
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse<Void> trackPostView(
             @CurrentUser UserContext currentUser,
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             HttpServletRequest request) {
 
         String clientIp = request.getHeader("X-Forwarded-For");
@@ -60,7 +60,7 @@ public class PostAnalyticsController {
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse<List<PostViewChartResponse>> getPostViewChart(
             @CurrentUser UserContext currentUser,
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestParam(value = "days", defaultValue = "7") @Min(1) Integer days) {
 
         List<PostViewChartResponse> chartData = postAnalyticsService.getPostViewChartData(currentUser, id, days);
@@ -71,7 +71,7 @@ public class PostAnalyticsController {
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse<List<PostViewChartResponse>> getMonthlyPostViewChart(
             @CurrentUser UserContext currentUser,
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestParam(value = "months", defaultValue = "6") @Min(1) Integer months) {
 
         // Mặc định lấy 6 tháng gần nhất nếu Frontend không truyền tham số 'months'

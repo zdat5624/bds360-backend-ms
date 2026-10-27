@@ -34,7 +34,7 @@ public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     @NotBlank(message = "Tên danh mục không được để trống")
     @Size(min = 5, max = 100, message = "Tên danh mục phải từ 5 đến 100 ký tự")

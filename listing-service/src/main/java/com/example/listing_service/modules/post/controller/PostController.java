@@ -104,7 +104,7 @@ public class PostController {
             @CurrentUser UserContext user,
             @Valid ForYouPostRequest request) {
 
-        System.out.println(">>> log here");
+        // System.out.println(">>> log here");
 
         return ApiResponse.success(postService.getForYouPosts(user, request),
                 "Lấy danh sách tin dành cho bạn thành công");
@@ -118,7 +118,7 @@ public class PostController {
 
     @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public ApiResponse<PostResponse> getPostById(@CurrentUser UserContext user, @PathVariable Long id) {
+    public ApiResponse<PostResponse> getPostById(@CurrentUser UserContext user, @PathVariable("id") Long id) {
         // user có thể null nếu public user gọi, Service sẽ tự handle
         return ApiResponse.success(postService.getPostById(user, id), "Lấy chi tiết tin đăng thành công");
     }
@@ -126,7 +126,7 @@ public class PostController {
     @GetMapping("/{id}/related")
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse<PageResponse<PostResponse>> getRelatedPosts(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @Valid RelatedPostRequest request) {
         return ApiResponse.success(postService.getRelatedPosts(id, request), "Lấy danh sách tin tương tự thành công");
     }
@@ -134,7 +134,7 @@ public class PostController {
     @DeleteMapping("/{id}")
     @RequireLogin
     @ResponseStatus(HttpStatus.OK)
-    public ApiResponse<Void> deletePost(@CurrentUser UserContext user, @PathVariable Long id) {
+    public ApiResponse<Void> deletePost(@CurrentUser UserContext user, @PathVariable("id") Long id) {
         postService.deletePost(user, id, false);
         return ApiResponse.success(null, "Xóa tin đăng thành công");
     }
@@ -144,8 +144,8 @@ public class PostController {
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse<PostResponse> togglePostVisibility(
             @CurrentUser UserContext user,
-            @PathVariable Long id,
-            @RequestParam boolean isHidden) {
+            @PathVariable("id") Long id,
+            @RequestParam("isHidden") boolean isHidden) {
 
         // Gọi xuống Service để xử lý logic
         PostResponse updatedPost = postService.togglePostVisibility(user, id, isHidden);
@@ -161,7 +161,7 @@ public class PostController {
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse<PostResponse> renewPost(
             @CurrentUser UserContext user,
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @Valid @RequestBody RenewPostRequest request) {
         return ApiResponse.success(postService.renewPost(user, id, request), "Gia hạn tin đăng thành công");
     }
@@ -171,7 +171,7 @@ public class PostController {
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse<PostResponse> bumpPost(
             @CurrentUser UserContext user,
-            @PathVariable Long id) {
+            @PathVariable("id") Long id) {
         return ApiResponse.success(postService.bumpPost(user, id), "Đẩy tin thành công");
     }
 

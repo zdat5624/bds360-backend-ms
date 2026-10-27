@@ -1,0 +1,39 @@
+{
+    "properties": [
+        {
+            "name": "api.jwt.base64-secret",
+            "type": "java.lang.String",
+            "description": "A description for 'api.jwt.base64-secret'"
+        },
+        {
+            "name": "api.jwt.token-validity-in-seconds",
+            "type": "java.lang.String",
+            "description": "A description for 'api.jwt.token-validity-in-seconds'"
+        },
+        {
+            "name": "vnp.tmn-code",
+            "type": "java.lang.String",
+            "description": "A description for 'vnp.tmn-code'"
+        },
+        {
+            "name": "vnp.secret-key",
+            "type": "java.lang.String",
+            "description": "A description for 'vnp.secret-key'"
+        },
+        {
+            "name": "vnp.pay-url",
+            "type": "java.lang.String",
+            "description": "A description for 'vnp.pay-url'"
+        },
+        {
+            "name": "vnp.return-url-backend",
+            "type": "java.lang.String",
+            "description": "A description for 'vnp.return-url-backend'"
+        },
+        {
+            "name": "vnp.return-url-frontend",
+            "type": "java.lang.String",
+            "description": "A description for 'vnp.return-url-frontend'"
+        }
+    ]
+}

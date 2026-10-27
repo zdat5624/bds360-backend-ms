@@ -44,6 +44,10 @@ public class UserService {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
 
+        if (isPhoneExist(request.getPhone())) {
+            throw new AppException(ErrorCode.USER_EXISTED);
+        }
+
         User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user = userRepository.save(user);
@@ -103,6 +107,10 @@ public class UserService {
 
     @Transactional
     public UserResponse handleUpdateUser(UpdateUserRequest request) {
+        if (userRepository.existsByPhoneAndIdNot(request.getPhone(), request.getId())) {
+            throw new AppException(ErrorCode.PHONE_EXISTED);
+        }
+
         User currentUser = fetchUserById(request.getId());
         userMapper.updateUserFromRequest(request, currentUser);
         currentUser = userRepository.save(currentUser);
@@ -120,6 +128,10 @@ public class UserService {
             throw new AppException(ErrorCode.FORBIDDEN);
         }
 
+        if (userRepository.existsByPhoneAndIdNot(request.getPhone(), request.getId())) {
+            throw new AppException(ErrorCode.PHONE_EXISTED);
+        }
+
         User targetUser = fetchUserById(request.getId());
         userMapper.updateProfileFromRequest(request, targetUser);
         targetUser = userRepository.save(targetUser);
@@ -132,6 +144,10 @@ public class UserService {
 
     public boolean isEmailExist(String email) {
         return userRepository.existsByEmail(email);
+    }
+
+    public boolean isPhoneExist(String phone) {
+        return userRepository.existsByPhone(phone);
     }
 
     public PageResponse<UserResponse> getUsers(UserFilterRequest filter) {

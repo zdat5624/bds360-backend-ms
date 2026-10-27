@@ -25,12 +25,19 @@ public class IdentityGrpcClient {
     private InternalIdentityServiceGrpc.InternalIdentityServiceBlockingStub identityStub;
 
     /**
-     * Lấy số dư hiện tại của một User thông qua API GetUsersInfo (batch)
+     * Lấy số dư hiện tại của 1 User
      */
     public long getUserBalance(Long userId) {
-        log.info("Fetching balance for User {}", userId);
+        return getUserInfo(userId).getBalance();
+    }
 
-        // Tạo request với list chứa 1 userId
+    /**
+     * Lấy thông tin chi tiết của 1 User (Tận dụng API Batch GetUsersInfo)
+     */
+    public UserInfo getUserInfo(Long userId) {
+        log.info("Fetching UserInfo for User {} via Batch API", userId);
+
+        // 🌟 Bọc userId vào List có 1 phần tử để dùng chung API lấy danh sách
         GetUsersInfoRequest request = GetUsersInfoRequest.newBuilder()
                 .addAllUserIds(List.of(userId))
                 .build();
@@ -38,12 +45,13 @@ public class IdentityGrpcClient {
         GetUsersInfoReply response = identityStub.getUsersInfo(request);
         Map<Long, UserInfo> userMap = response.getUsersMap();
 
+        // 🌟 Bóc lấy đúng User có ID vừa truyền lên
         if (!userMap.containsKey(userId)) {
             log.error("User {} not found in Identity Service", userId);
-            throw new AppException(ErrorCode.USER_NOT_FOUND); // Cần đảm bảo có ErrorCode này
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
         }
 
-        return userMap.get(userId).getBalance();
+        return userMap.get(userId);
     }
 
     /**

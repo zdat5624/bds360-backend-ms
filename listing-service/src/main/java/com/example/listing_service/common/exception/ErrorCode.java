@@ -43,6 +43,9 @@ public enum ErrorCode {
         POST_ALREADY_SAVED(12004, HttpStatus.CONFLICT, "Tin đã được lưu trước đó."),
         BUMP_COOLDOWN_ACTIVE(12006, HttpStatus.TOO_MANY_REQUESTS,
                         "Thao tác quá nhanh. Bạn chỉ được đẩy tin này lại sau 2 giờ."),
+
+        CATEGORY_TYPE_MISMATCH(12007, HttpStatus.BAD_REQUEST,
+                        "Loại tin đăng (SALE/RENT) không khớp với cấu hình của Danh mục."),
         // ==========================================
         // 13. ADDRESS MODULE (Tọa độ, Bản đồ)
         // ==========================================

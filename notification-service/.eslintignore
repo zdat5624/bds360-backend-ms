@@ -1,0 +1,2 @@
+# Bỏ qua không quét các file do protobuf sinh ra
+src/generated/*
